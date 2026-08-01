@@ -13,40 +13,30 @@ But first, here's the interesting part:
 
 <!-- START_AI_SUMMARY -->
 
-This flat handles the small stuff on its own, so I don't have to think about it. Lights find me in the hallway, my bedroom, and the Jungle, then switch off once I've actually left. Laundry finds its owner and taps them on the shoulder when it's done. Walking into the bathroom kicks off its own little sound scene, and the whole place quietly resends any nag I've ignored.
+This flat handles the small stuff on its own, so I don't have to think about it. Lights find me in the hallway, my bedroom, and the Jungle, then let go the moment I've told them to behave differently. The whole system reads off two shared moods, and if any of the machinery in the bathroom trips over itself, it tries to fix itself before I even notice.
 
-### Lights that follow me, until I tell them not to
-Hallway, my bedroom, the Jungle's mirror cabinet, and the Toilet all turn lights on from motion or presence. The hallway waits 30 seconds of no motion before switching off, so it doesn't strobe on and off while I stand still. The mirror cabinet only needs 2 seconds. Each of these rooms has its own lighting mode, and the motion behaviour only runs while that mode is set to Auto. A wall button can knock a room out of Auto, and two hours later, or right at the 7am morning switch, it resets itself back to Auto, but only if the room checks out as empty first. The hallway and Toilet also watch the time of day, going dim after 11pm, and the Toilet checks vibe mode too, turning red during certain shared scenes.
+### Welcome to the Jungle
+Walking into the bathroom gives you an adventurous transportation into the Jungle: vines climbing the walls, birds perched on the shelves, and a monkey hanging from the ceiling holding a lightbulb that warms up the second it senses you. A moment later the room starts breathing around you, ambient jungle sound rising from two Squeezelite players on a Raspberry Pi, run through Music Assistant. The soundtrack isn't static: crickets take over at night, birds return with the daylight, and on rare visits a little melody sneaks in instead of the usual ambience. Step close to the mirror cabinet and its light switches on for you, gone again two seconds after you back away. Linger in the Toilet next door on top of that, and a second sound joins the first, though that particular surprise only plays once per visit before it goes quiet again.
 
-```mermaid
-stateDiagram-v2
-    "Auto" --> "On for a while": "double press"
-    "Auto" --> "Off for a while": "single press"
-    "On for a while" --> "Auto": "two hours or morning"
-    "Off for a while" --> "Auto": "two hours or morning"
-```
+### Brain's Virtual Memory Extension
+I couldn't stop at automating the home itself; I wanted to stop having to remember things too. My phone knows the difference between passing a grocery store and actually walking into one, and if my shopping list has anything on it, it tells me before I've even parked. The laundry machine in the Jungle taps whoever claimed the load on the shoulder the moment it drops under 10 watts for two minutes straight, no more wandering down to check. The printer keeps closer tabs on its six ink levels than I ever could, and if I swipe away its warning without actually refilling it, it just tells me again. All of it is the same idea: offload the remembering, keep the living care-free.
 
-### The buttons on the wall
-Most rooms have an IKEA SOMRIG remote. The Living Room has a four button Tuya one. A single press puts a room back to Auto. A double press forces full brightness and a cold white for a while. A long press gets repurposed entirely in some rooms, like saving an OBS replay from my bedroom instead of touching a light. In the Jungle, the same remote that assigns the next laundry load to whoever pressed it also turns a ceiling accent light on with a long press. The Living Room remote fires an IR sequence for the TV and downlight off one button, and its double press either pauses whatever's playing or starts a looping fireplace playlist. A vibration sensor under my mattress also kills my bedroom light, but only at night, so a nap doesn't get punished.
-
-### Laundry tells me when it's done
-The washing machine lives in the Jungle. A power draw over 1000 watts means a cycle has started. Power sitting under 10 watts for two full minutes means it's actually finished, not just paused between stages.
+### Automatic lights, until you say otherwise
+Motion and presence run the lights in the hallway, my bedroom, and the Jungle's mirror cabinet on their own, but automatic is only pleasant until it does the wrong thing at the wrong moment. So every one of these rooms has a mode, and a single button press can pull it out of Auto entirely, force it fully on, or force it off for the rest of the morning. Nothing fights back in the moment. It just quietly lets the override expire two hours later, or resets itself the instant the day flips to Morning, but only once the room checks out as actually empty.
 
 ```mermaid
-flowchart TD
-    A["Power above 1000 watts"] --> B["Cycle marked active"]
-    B --> C["Power below 10 watts for two minutes"]
-    C --> D["Notify whoever claimed the load"]
-    D --> E["Reset owner to nobody"]
+flowchart LR
+    A["Auto mode"] -->|"single press"| B["Off for a while"]
+    A -->|"double press"| C["On for a while"]
+    B -->|"two hours or morning"| A
+    C -->|"two hours or morning"| A
 ```
 
-A remote button assigns the next load to me or my flatmate before we start it. If nobody claimed it, the notification nags in Finnish and blames nobody in particular. Either way, the owner resets the moment the message goes out.
+### Time of Day and Vibe Modes
+Everything in the flat reads off two shared states. Time of Day cycles itself through Morning, Day, Evening, and Night on a clock, nudging lights warmer and dimmer as the night sets in. Vibe Mode is the one I set by hand, for Party, Sauna, Cozy Nook, or Movie, and it wins the argument over whatever Time of Day thinks the moment is. Movie keeps everything near the Living Room dim so nobody watching gets blinded by a hallway light. Maintenance holds every light on and every speaker silent for as long as I need to work on something, until I switch it back off myself. The Toilet even leans into a shared mood, turning its light red whenever one of the shared vibes is active.
 
-### The Jungle sounds alive
-Walking into the Jungle brings ambient sound back in, fading up over a few seconds rather than snapping on. Step into the Toilet on top of that and a second sound joins in with its own playlist, though that easter egg only plays once per visit. Changing time of day swaps the ambient playlist while I'm still in the room. Leaving the Toilet checks whether the Jungle is still occupied before deciding whether to fade the main sound out too. The two sounds run off two players on the same Pi, and they sometimes drop off the network. If either goes unavailable for three minutes, I get a notification and it reboots itself and reloads. There's a second watchdog running directly on the Pi that reboots and logs on its own, in case Home Assistant can't reach it at all.
-
-### Things that nag me until I deal with them
-The printer tracks six ink levels on its own and only clears the alert once every one of them is back above threshold. Dismissed phone notifications come back on their own if whatever they were about is still true. That's what keeps an ink alert returning every time I swipe it away without refilling. A shopping list reminder fires when I walk into one of a few named stores, or when the car's Bluetooth shows up paired to my phone, but only if the list actually has items on it and I'm not already home.
+### When something breaks
+The Jungle's two speakers occasionally drop off the network mid-scene, and when they do, Home Assistant notices within three minutes, tells me something's wrong, and reboots the offending player itself before reloading it. There's a second watchdog running directly on the Pi as well, rebooting and logging entirely on its own, for the moments Home Assistant can't even reach it to ask. The bigger this system gets, the less I want to be the one checking on it, so the goal everywhere is the same: set it up once, and let it notice its own problems before I do.
 
 <!-- END_AI_SUMMARY -->
 
