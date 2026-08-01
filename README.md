@@ -3,6 +3,7 @@
 Documentation of the smart home project I've been building with Home Assistant.
 
 I figured that if I'm automating the house, the documentation of it ought to be automated as well. And indeed this page is.
+
 It's generated from automations.yaml — the actual, complete automation code running my home, sitting right there in this repository — plus a set of accurately tuned instructions for the model. 
 The overview below rewrites itself whenever I make changes to my smart home. And the best part is: I don't even need to think about it anymore. It just works. Even the images get inserted, deterministically, in their correct spots!
 There's a description of how that works at the end of the file.
