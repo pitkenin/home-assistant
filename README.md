@@ -13,22 +13,40 @@ But first, here's the interesting part:
 
 <!-- START_AI_SUMMARY -->
 
-Living with this now means lights just show up where I am and disappear when I leave, laundry taps me on the shoulder instead of me remembering to check it, and walking into the bathroom quietly kicks off a whole audio scene. The actual engineering effort went into making sure a button press always wins over the automatic stuff, instantly, rather than fighting it.
+This flat handles the small stuff on its own, so I don't have to think about it. Lights find me in the hallway, my bedroom, and the Jungle, then switch off once I've actually left. Laundry finds its owner and taps them on the shoulder when it's done. Walking into the bathroom kicks off its own little sound scene, and the whole place quietly resends any nag I've ignored.
 
-### Presence-Based Lighting with Manual Override
-Hallway, bedroom, the Jungle's mirror cabinet, and the toilet all turn lights on from occupancy and off after a debounced vacancy period, not on every flicker of a sensor — the hallway waits a full 30 seconds of continuous "off" before it trusts the room is empty, and the mirror cabinet needs 2 seconds of "not occupied" so someone standing still in front of it doesn't get plunged into darkness. Each of these rooms carries a lighting mode helper (Auto / On / Off) that a wall button can set, and the motion logic only fires when that helper says Auto. A separate job resets the override two hours later, or instantly at the 07:00 morning changeover, but only after confirming the room is actually empty, so nobody's light gets pulled out from under them. The hallway and toilet also read the shared time-of-day mode, dropping into a dim night effect after 23:00; the toilet additionally checks vibe mode and turns red during certain shared ambience scenes instead.
+### Lights that follow me, until I tell them not to
+Hallway, my bedroom, the Jungle's mirror cabinet, and the Toilet all turn lights on from motion or presence. The hallway waits 30 seconds of no motion before switching off, so it doesn't strobe on and off while I stand still. The mirror cabinet only needs 2 seconds. Each of these rooms has its own lighting mode, and the motion behaviour only runs while that mode is set to Auto. A wall button can knock a room out of Auto, and two hours later, or right at the 7am morning switch, it resets itself back to Auto, but only if the room checks out as empty first. The hallway and Toilet also watch the time of day, going dim after 11pm, and the Toilet checks vibe mode too, turning red during certain shared scenes.
 
-### Physical Button Mapping
-IKEA SOMRIG remotes handle short, double, and long presses per room, each doing something specific rather than a blind toggle: single press restores Auto (forcing the light off first so the motion logic re-triggers cleanly), double press forces full brightness and daylight color temperature under a timed "on" mode, and long press gets repurposed entirely — an OBS replay-save button in my bedroom instead of touching a light at all. In the Jungle, the same remote that assigns the next laundry load to whoever pressed it also drives a ceiling accent light on long press. The living room's four-button Tuya remote runs an IR power/downlight sequence off one button, and its double press either pauses whatever's playing or starts a looping fireplace playlist depending on state. A vibration sensor under the mattress also kills the bedroom light, but only when time-of-day mode says Night, so a nap doesn't get punished.
+```mermaid
+stateDiagram-v2
+    "Auto" --> "On for a while": "double press"
+    "Auto" --> "Off for a while": "single press"
+    "On for a while" --> "Auto": "two hours or morning"
+    "Off for a while" --> "Auto": "two hours or morning"
+```
 
-### Laundry Workflow
-The washing machine lives in the Jungle, and detection is split in two: a power spike above 1000W marks a cycle started, guarded by a flag so it doesn't refire mid-wash, and a separate watcher waits for power to sit below 10W for a full two minutes before calling it done, riding out the quiet pauses a normal cycle has between stages. A user helper, set by remote buttons, decides who gets the notification, falling back to a nag in Finnish if nobody claimed it, then resets itself the moment the message goes out.
+### The buttons on the wall
+Most rooms have an IKEA SOMRIG remote. The Living Room has a four button Tuya one. A single press puts a room back to Auto. A double press forces full brightness and a cold white for a while. A long press gets repurposed entirely in some rooms, like saving an OBS replay from my bedroom instead of touching a light. In the Jungle, the same remote that assigns the next laundry load to whoever pressed it also turns a ceiling accent light on with a long press. The Living Room remote fires an IR sequence for the TV and downlight off one button, and its double press either pauses whatever's playing or starts a looping fireplace playlist. A vibration sensor under my mattress also kills my bedroom light, but only at night, so a nap doesn't get punished.
 
-### Bathroom Ambience and Self-Healing Audio
-Presence in the Jungle drives two audio streams off the same Pi: walking in resumes ambient sound on the primary channel with a volume fade instead of a hard cutover, and stepping into the toilet layers in the secondary channel with its own playlist — gated so that easter egg only plays once per visit, not every time someone glances over. Time-of-day changes reselect the playlist while occupied, and leaving the toilet checks whether the main room is still occupied before deciding whether to fade the primary channel out too. Since these streams occasionally drop off the network, a watchdog on the Home Assistant side waits three minutes for either to go unavailable, notifies me, and reboots whichever one failed before reloading the integration — backed by a second watchdog on the Pi itself that reboots and logs independently.
+### Laundry tells me when it's done
+The washing machine lives in the Jungle. A power draw over 1000 watts means a cycle has started. Power sitting under 10 watts for two full minutes means it's actually finished, not just paused between stages.
 
-### Notifications and Maintenance
-A printer-ink automation tracks six ink channels separately and only clears the alert once all of them are back above threshold. A generic notification manager listens for dismissed phone notifications and resends them if whatever they're tagged against is still active, which is what keeps ink alerts and similar nags coming back until actually resolved rather than dying the moment they're swiped away. A shopping list reminder fires from geofencing against named stores, or from spotting the car's Bluetooth MAC among paired devices, but only if the list has open items and the phone isn't already on home Wi-Fi.
+```mermaid
+flowchart TD
+    A["Power above 1000 watts"] --> B["Cycle marked active"]
+    B --> C["Power below 10 watts for two minutes"]
+    C --> D["Notify whoever claimed the load"]
+    D --> E["Reset owner to nobody"]
+```
+
+A remote button assigns the next load to me or my flatmate before we start it. If nobody claimed it, the notification nags in Finnish and blames nobody in particular. Either way, the owner resets the moment the message goes out.
+
+### The Jungle sounds alive
+Walking into the Jungle brings ambient sound back in, fading up over a few seconds rather than snapping on. Step into the Toilet on top of that and a second sound joins in with its own playlist, though that easter egg only plays once per visit. Changing time of day swaps the ambient playlist while I'm still in the room. Leaving the Toilet checks whether the Jungle is still occupied before deciding whether to fade the main sound out too. The two sounds run off two players on the same Pi, and they sometimes drop off the network. If either goes unavailable for three minutes, I get a notification and it reboots itself and reloads. There's a second watchdog running directly on the Pi that reboots and logs on its own, in case Home Assistant can't reach it at all.
+
+### Things that nag me until I deal with them
+The printer tracks six ink levels on its own and only clears the alert once every one of them is back above threshold. Dismissed phone notifications come back on their own if whatever they were about is still true. That's what keeps an ink alert returning every time I swipe it away without refilling. A shopping list reminder fires when I walk into one of a few named stores, or when the car's Bluetooth shows up paired to my phone, but only if the list actually has items on it and I'm not already home.
 
 <!-- END_AI_SUMMARY -->
 
