@@ -4,7 +4,7 @@ Documentation of the smart home project I've been building with Home Assistant.
 
 Keeping it written by hand was never going to happen. Every tweak and every new
 automation would mean editing a README, leaving me with less time for my projects (including this one). 
-So, I automated it. The overview below is generated from my actual automation config and rewritten once a week if there were any changes made.
+So, I automated it. The overview below is generated from my actual automation config and rewritten daily if there were any changes made.
 And the best part is: I don't even need to think about it. You can read about the technical details at the end of this file. 
 
 But first, here's the interesting part:
@@ -25,7 +25,7 @@ flowchart LR
     E --> F["this file"]
 ```
 
-Once a week, an automation in Home Assistant triggers an add-on that pushes the config to
+Once a day, an automation in Home Assistant triggers an add-on that pushes the config to
 a private repository. A GitHub Action there passes the automations to Claude, which
 groups them into themes and writes the section above. The `description` field on each 
 automation is written by hand when I build it, and the model uses it to help it 
