@@ -13,24 +13,7 @@ But first, here's the interesting part:
 
 <!-- START_AI_SUMMARY -->
 
-This flat handles the small stuff on its own, so I don't have to think about it. Lights find me in the hallway, my bedroom, and the Jungle, then let go the moment I've told them to behave differently. The whole system reads off two shared moods, and if any of the machinery in the bathroom trips over itself, it tries to fix itself before I even notice.
 
-### Welcome to the Jungle
-Walking into the bathroom gives you an adventurous transportation into the Jungle: vines climbing the walls, birds perched on the shelves, and a monkey hanging from the ceiling holding a lightbulb that warms up the second it senses you. A moment later the room starts breathing around you, ambient jungle sound rising from two Squeezelite players on a Raspberry Pi, run through Music Assistant. The soundtrack isn't static: crickets take over at night, birds return with the daylight, and on rare visits a little melody sneaks in instead of the usual ambience. Step close to the mirror cabinet and its light switches on for you, gone again two seconds after you back away. Linger by the toilet in the corner of the Jungle and, once in a while, a second layer of sound joins in for a bit, though that particular surprise only shows up once per visit before it settles back down.
-
-### Brain's Virtual Memory Extension
-I couldn't stop at automating the home itself; I wanted to stop having to remember things too. My phone knows the difference between passing a grocery store and actually walking into one, and if my shopping list has anything on it, it tells me before I've even parked. The washing machine in the Jungle taps whoever claimed the load on the shoulder the moment it drops under 10 watts for two minutes straight, no more wandering down to check. The printer keeps closer tabs on its six ink levels than I ever could, and if I swipe away its warning without actually refilling it, it just tells me again. All of it is the same idea: offload the remembering, keep the living care-free.
-
-![Brain's Virtual Memory Extension](images/brain-s-virtual-memory-extension.jpg)
-
-### Automatic lights, until you say otherwise
-Motion runs the lights in the hallway and my bedroom on their own, but automatic is only pleasant until it does the wrong thing at the wrong moment. So both rooms have a mode, and a single button press can pull it out of Auto entirely, force it fully on, or force it off for the rest of the morning. Nothing fights back in the moment. It just quietly lets the override expire two hours later, or resets itself the instant the day flips to Morning, but only once the room checks out as actually empty.
-
-### Time of Day and Vibe Modes
-Everything in the flat reads off two shared states. Time of Day cycles itself through Morning, Day, Evening, and Night on a clock, nudging lights warmer and dimmer as the night sets in. Vibe Mode is the one I set by hand, for Party, Sauna, Cozy Nook, or Movie, and it wins the argument over whatever Time of Day thinks the moment is. Movie keeps everything near the living room dim so nobody watching gets blinded by a stray light. Maintenance holds every light on and every speaker silent for as long as I need to work on something, until I switch it back off myself. The Toilet even leans into a shared mood, turning its light red whenever one of the shared vibes is active.
-
-### When something breaks
-The Jungle's speakers occasionally drop off the network mid-scene, and when they do, Home Assistant notices within three minutes, tells me something's wrong, and reboots the offending player itself before reloading it. There's a second watchdog running directly on the Pi as well, rebooting and logging entirely on its own, for the moments Home Assistant can't even reach it to ask. The bigger this system gets, the less I want to be the one checking on it, so the goal everywhere is the same: set it up once, and let it notice its own problems before I do.
 
 
 <!-- END_AI_SUMMARY -->
