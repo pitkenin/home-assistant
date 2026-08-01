@@ -3,7 +3,8 @@
 Documentation of the smart home project I've been building with Home Assistant.
 
 I figured that if I'm automating the house, the documentation of it ought to be automated as well. And indeed this page is.
-It's generated from my actual automation config and a set of accurately tuned custom instructions for the AI model, and it rewrites itself whenever I make changes to my smart home. 
+It's generated from automations.yaml — the actual, complete automation code running my home, sitting right there in this repository — plus a set of accurately tuned instructions for the model. 
+The overview below rewrites itself whenever I make changes to my smart home. Even the images get inserted, deterministically, in their correct spots!
 There's a description of how that works at the end of the file.
 
 And the best part is: I don't even need to think about it anymore. It just works.
@@ -56,7 +57,9 @@ Once a day, an automation in Home Assistant triggers an add-on that pushes the c
 a private repository. A GitHub Action there passes the automations to Claude, which
 groups them into themes and writes the section above. The `description` field on each 
 automation is written by hand when I build it, and the model uses it to help it 
-determine what the automation does.
+determine what the automation does. Photos are placed by the script rather than the model, 
+matched to sections by filename, so the same input always produces the same layout. 
+The model only writes the text, and it never handles the images.
 
 The system hashes the automation set before doing anything, so an unchanged config costs no
 API calls and produces no commit. It feeds the previous version back as context, so
