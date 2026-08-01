@@ -1,0 +1,1500 @@
+- id: '1773949419676'
+  alias: Hallway Light Motion Activation
+  description: Controls the lights in the hallway based on a motion sensor.
+  triggers:
+  - type: occupied
+    device_id: 1f77ec67617a8ffa5816cd79982d271e
+    entity_id: a555ec3b78937ca03e45669429c79601
+    domain: binary_sensor
+    trigger: device
+  conditions:
+  - condition: state
+    entity_id: input_select.hallway_lighting_mode
+    state:
+    - Auto
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.time_of_day_mode
+        state:
+        - Night
+      sequence:
+      - alias: Turn on the light
+        action: light.turn_on
+        target:
+          entity_id:
+          - light.hallway_light_3
+        data:
+          effect: Night light
+    default:
+    - alias: Turn on the light
+      action: light.turn_on
+      target:
+        entity_id:
+        - light.hallway_light_1
+        - light.hallway_light_2
+        - light.hallway_light_3
+      data: {}
+  - wait_for_trigger:
+    - trigger: state
+      entity_id:
+      - binary_sensor.0x54ef4410014a6f50_occupancy
+      to:
+      - 'off'
+      for:
+        hours: 0
+        minutes: 0
+        seconds: 30
+    timeout:
+      hours: 1
+      minutes: 0
+      seconds: 0
+      milliseconds: 0
+  - if:
+    - condition: state
+      entity_id: input_select.hallway_lighting_mode
+      state:
+      - Auto
+    then:
+    - alias: Turn off the light
+      action: light.turn_off
+      target:
+        entity_id:
+        - light.hallway_light_1
+        - light.hallway_light_2
+        - light.hallway_light_3
+  mode: restart
+  max_exceeded: silent
+- id: '1773950827765'
+  alias: Turn on Jungle Cabinet Light
+  description: Control the bathroom mirror cabinet light based on presense in front
+    of the cabinet
+  triggers:
+  - type: occupied
+    device_id: 05e258c366e49a46b100398b9505ffd9
+    entity_id: 424198a875bcc9bca4050b2f88c047ee
+    domain: binary_sensor
+    trigger: device
+    id: light on
+  - type: not_occupied
+    device_id: 05e258c366e49a46b100398b9505ffd9
+    entity_id: 424198a875bcc9bca4050b2f88c047ee
+    domain: binary_sensor
+    trigger: device
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 2
+    id: light off
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - light on
+      sequence:
+      - type: turn_on
+        device_id: e5a557bb69b9f2c2639efe2ccf9183d5
+        entity_id: bd15701c9143a8b06dfdf7262e279d75
+        domain: switch
+    - conditions:
+      - condition: trigger
+        id:
+        - light off
+      sequence:
+      - type: turn_off
+        device_id: e5a557bb69b9f2c2639efe2ccf9183d5
+        entity_id: bd15701c9143a8b06dfdf7262e279d75
+        domain: switch
+  mode: single
+- id: '1774193753994'
+  alias: Detect Laundry Cycle
+  description: Detect when the laundry machine has begun operating
+  triggers:
+  - type: power
+    device_id: c71a78605d8b0577bc3fc2c1cd328618
+    entity_id: a37419e40c4fd79adabe791a9564e3e1
+    domain: sensor
+    trigger: device
+    above: 1000
+  conditions:
+  - condition: state
+    entity_id: input_boolean.laundry_cycle_active
+    state:
+    - 'off'
+  actions:
+  - action: input_boolean.turn_on
+    metadata: {}
+    target:
+      entity_id: input_boolean.laundry_cycle_active
+    data: {}
+  mode: single
+- id: '1774194768683'
+  alias: Notify When Laundry is Ready
+  description: Send a phone notification when laundry machine is idle after operation.
+  triggers:
+  - trigger: numeric_state
+    entity_id:
+    - sensor.laundry_machine_power
+    for:
+      hours: 0
+      minutes: 2
+      seconds: 0
+    below: 10
+  conditions:
+  - condition: state
+    entity_id: input_boolean.laundry_cycle_active
+    state:
+    - 'on'
+  actions:
+  - action: input_boolean.turn_off
+    metadata: {}
+    target:
+      entity_id: input_boolean.laundry_cycle_active
+    data: {}
+  - alias: Send notification to correct User
+    choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.laundry_machine_user
+        state:
+        - Aksu
+      sequence:
+      - action: ticker.notify
+        metadata: {}
+        data:
+          category: X Notifications
+          message: Laundry is ready!
+          title: ' '
+    - conditions:
+      - condition: state
+        entity_id: input_select.laundry_machine_user
+        state:
+        - Seba
+      sequence:
+      - action: ticker.notify
+        metadata: {}
+        data:
+          category: Seba Notifications
+          message: Laundry is ready!
+          title: ' '
+    - conditions:
+      - condition: state
+        entity_id: input_select.laundry_machine_user
+        state:
+        - nobolonski
+      sequence:
+      - action: ticker.notify
+        metadata: {}
+        data:
+          category: General
+          message: Joku nobolonski unohti painaa nappia mut siis pyykit on done
+          title: '  '
+  - action: input_select.select_option
+    metadata: {}
+    target:
+      entity_id: input_select.laundry_machine_user
+    data:
+      option: nobolonski
+    alias: Reset User
+  mode: single
+- id: '1774196799531'
+  alias: Laundry Button Mapping
+  description: Maps IKEA SOMRIG buttons (2 buttons) to different users of the laundry
+    machine for future notification. Additionally controls bathroom lighting with
+    alternative inputs.
+  triggers:
+  - domain: mqtt
+    device_id: 13fdc0f255838705242ac1a6182c4876
+    type: action
+    subtype: 1_short_release
+    trigger: device
+    id: aksu
+  - domain: mqtt
+    device_id: 13fdc0f255838705242ac1a6182c4876
+    type: action
+    subtype: 2_short_release
+    trigger: device
+    id: seba
+  - domain: mqtt
+    device_id: 13fdc0f255838705242ac1a6182c4876
+    type: action
+    subtype: 1_double_press
+    trigger: device
+    id: reset user
+  - domain: mqtt
+    device_id: 13fdc0f255838705242ac1a6182c4876
+    type: action
+    subtype: 2_double_press
+    trigger: device
+    id: reset user
+  - domain: mqtt
+    device_id: 13fdc0f255838705242ac1a6182c4876
+    type: action
+    subtype: 1_long_press
+    trigger: device
+    id: 1_long
+  - domain: mqtt
+    device_id: 13fdc0f255838705242ac1a6182c4876
+    type: action
+    subtype: 2_long_press
+    trigger: device
+    id: 2_long
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - aksu
+      sequence:
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id: input_select.laundry_machine_user
+        data:
+          option: Aksu
+    - conditions:
+      - condition: trigger
+        id:
+        - seba
+      sequence:
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id: input_select.laundry_machine_user
+        data:
+          option: Seba
+    - conditions:
+      - condition: trigger
+        id:
+        - reset user
+      sequence:
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id: input_select.laundry_machine_user
+        data:
+          option: nobolonski
+    - conditions:
+      - condition: trigger
+        id:
+        - 1_long
+      sequence:
+      - action: light.turn_on
+        metadata: {}
+        target:
+          entity_id: light.jungle_ceiling
+        data:
+          brightness_pct: 100
+    - conditions:
+      - condition: trigger
+        id:
+        - 2_long
+      sequence:
+      - action: light.turn_off
+        metadata: {}
+        target:
+          entity_id: light.jungle_ceiling
+        data: {}
+  mode: single
+- id: '1774198810880'
+  alias: Hallway Buttons Mapping
+  description: Maps IKEA SOMRIG buttons (2 buttons) to different actions to control
+    the lights in the hallway.
+  triggers:
+  - domain: mqtt
+    device_id: 780907972d8aed46970822199d984992
+    type: action
+    subtype: 1_short_release
+    trigger: device
+    id: on_single
+  - domain: mqtt
+    device_id: 780907972d8aed46970822199d984992
+    type: action
+    subtype: 1_double_press
+    trigger: device
+    id: on_double
+  - domain: mqtt
+    device_id: 780907972d8aed46970822199d984992
+    type: action
+    subtype: 1_long_press
+    trigger: device
+    id: on_long
+  - domain: mqtt
+    device_id: 780907972d8aed46970822199d984992
+    type: action
+    subtype: 2_short_release
+    trigger: device
+    id: off_single
+  - domain: mqtt
+    device_id: 780907972d8aed46970822199d984992
+    type: action
+    subtype: 2_double_press
+    trigger: device
+    id: off_double
+  - domain: mqtt
+    device_id: 780907972d8aed46970822199d984992
+    type: action
+    subtype: 2_long_press
+    trigger: device
+    id: off_long
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - off_single
+      sequence:
+      - action: light.turn_off
+        metadata: {}
+        target:
+          entity_id: light.hallway_lights
+        data: {}
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id: input_select.hallway_lighting_mode
+        data:
+          option: Off (Timer)
+    - conditions:
+      - condition: trigger
+        id:
+        - off_double
+      sequence:
+      - action: light.turn_off
+        metadata: {}
+        target:
+          entity_id: light.hallway_lights
+        data: {}
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id: input_select.hallway_lighting_mode
+        data:
+          option: Off (Morning)
+    - conditions:
+      - condition: trigger
+        id:
+        - on_single
+      sequence:
+      - if:
+        - condition: not
+          conditions:
+          - condition: state
+            entity_id: input_select.hallway_lighting_mode
+            state:
+            - Auto
+        then:
+        - action: light.turn_off
+          metadata: {}
+          target:
+            entity_id: light.hallway_lights
+          data: {}
+        - delay:
+            hours: 0
+            minutes: 0
+            seconds: 0
+            milliseconds: 100
+      - action: light.turn_on
+        metadata: {}
+        target:
+          entity_id: light.hallway_lights
+        data: {}
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id: input_select.hallway_lighting_mode
+        data:
+          option: Auto
+    - conditions:
+      - condition: trigger
+        id:
+        - on_double
+      sequence:
+      - action: light.turn_on
+        metadata: {}
+        target:
+          entity_id: light.hallway_lights
+        data:
+          color_temp_kelvin: 6440
+          brightness_pct: 100
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 0
+          milliseconds: 100
+      - action: light.turn_on
+        metadata: {}
+        target:
+          entity_id: light.hallway_lights
+        data:
+          color_temp_kelvin: 6440
+          brightness_pct: 100
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id: input_select.hallway_lighting_mode
+        data:
+          option: On (Timer)
+  mode: restart
+- id: '1774199438030'
+  alias: Hallway Lights Reset to Auto Mode
+  description: Resets the control mode of the hallway lights to Auto after manual
+    input.
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_select.hallway_lighting_mode
+    to:
+    - Off (Timer)
+    for:
+      hours: 2
+      minutes: 0
+      seconds: 0
+    id: off reset
+  - trigger: state
+    entity_id:
+    - input_select.hallway_lighting_mode
+    to:
+    - On (Timer)
+    for:
+      hours: 2
+      minutes: 0
+      seconds: 0
+    id: on reset
+  - trigger: state
+    entity_id:
+    - input_select.time_of_day_mode
+    to:
+    - Morning
+  conditions: []
+  actions:
+  - action: input_select.select_option
+    metadata: {}
+    target:
+      entity_id: input_select.hallway_lighting_mode
+    data:
+      option: Auto
+  - condition: state
+    state:
+    - 'off'
+    entity_id: binary_sensor.0x54ef4410014a6f50_occupancy
+  - action: light.turn_off
+    metadata: {}
+    target:
+      entity_id: light.hallway_lights
+    data: {}
+  mode: single
+- id: '1774203301814'
+  alias: Living Room Lights Manual Control
+  description: Map living room lighting buttons (4 buttons) to different actions to
+    control lighting or other smart devices in the living room.
+  triggers:
+  - domain: mqtt
+    device_id: bb59ecb379884ab8f2b78936ae457ed7
+    type: action
+    subtype: 1_single
+    trigger: device
+    id: 1_single
+  - domain: mqtt
+    device_id: bb59ecb379884ab8f2b78936ae457ed7
+    type: action
+    subtype: 1_double
+    trigger: device
+    id: 1_double
+  - domain: mqtt
+    device_id: bb59ecb379884ab8f2b78936ae457ed7
+    type: action
+    subtype: 2_single
+    trigger: device
+    id: 2_single
+  - domain: mqtt
+    device_id: bb59ecb379884ab8f2b78936ae457ed7
+    type: action
+    subtype: 2_double
+    trigger: device
+    id: 2_double
+  - domain: mqtt
+    device_id: bb59ecb379884ab8f2b78936ae457ed7
+    type: action
+    subtype: 3_single
+    trigger: device
+    id: 3_single
+  - domain: mqtt
+    device_id: bb59ecb379884ab8f2b78936ae457ed7
+    type: action
+    subtype: 3_double
+    trigger: device
+    id: 3_double
+  - domain: mqtt
+    device_id: bb59ecb379884ab8f2b78936ae457ed7
+    type: action
+    subtype: 4_single
+    trigger: device
+    id: 4_single
+  - domain: mqtt
+    device_id: bb59ecb379884ab8f2b78936ae457ed7
+    type: action
+    subtype: 4_double
+    trigger: device
+    id: 4_double
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - 1_single
+      sequence:
+      - action: light.toggle
+        metadata: {}
+        target:
+          entity_id: light.couch_light
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - 2_single
+      sequence:
+      - action: light.toggle
+        metadata: {}
+        target:
+          entity_id:
+          - light.table_light
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - 3_single
+      sequence:
+      - action: light.toggle
+        metadata: {}
+        target:
+          entity_id:
+          - light.small_light
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - 4_single
+      sequence:
+      - action: script.send_ir_command
+        metadata: {}
+        data:
+          command: power
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 1
+          milliseconds: 0
+      - action: script.send_ir_command
+        metadata: {}
+        data:
+          command: downlight
+    - conditions:
+      - condition: trigger
+        id:
+        - 4_double
+      sequence:
+      - if:
+        - condition: state
+          entity_id: media_player.living_room_speaker_2
+          state:
+          - playing
+        then:
+        - action: media_player.media_pause
+          metadata: {}
+          target:
+            entity_id: media_player.living_room_speaker_2
+          data: {}
+        else:
+        - action: media_player.repeat_set
+          metadata: {}
+          target:
+            device_id: 9dcc359429d60e1d51d4b485b08d4407
+          data:
+            repeat: one
+        - action: music_assistant.play_media
+          metadata: {}
+          target:
+            device_id: 9dcc359429d60e1d51d4b485b08d4407
+          data:
+            media_id: fireplace
+            enqueue: replace
+            media_type: playlist
+  mode: single
+- id: '1774203682753'
+  alias: Monkey Light Motion Activation
+  description: Controls the main light in the bathroom based on a presense sensor.
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_1
+    from: 'off'
+    to: 'on'
+    id: 'on'
+  - trigger: state
+    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_1
+    from: 'on'
+    to: 'off'
+    id: 'off'
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: 'on'
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: light.monkey_light_local
+        data:
+          brightness_pct: 1
+      - delay:
+          milliseconds: 100
+      - action: light.turn_on
+        target:
+          entity_id: light.monkey_light_local
+        data:
+          brightness_pct: 20
+          transition: 2
+    - conditions:
+      - condition: trigger
+        id: 'off'
+      sequence:
+      - action: light.turn_off
+        target:
+          entity_id: light.monkey_light_local
+        data: {}
+      - action: light.turn_off
+        metadata: {}
+        target:
+          entity_id: light.jungle_ceiling
+        data: {}
+  mode: restart
+  max_exceeded: silent
+- id: '1774217394799'
+  alias: Select Time of Day Mode
+  description: Controls the time of day mode (helper) based on current time of day.
+  triggers:
+  - trigger: time
+    at: 07:00:00
+    weekday:
+    - sat
+    - fri
+    - thu
+    - wed
+    - tue
+    - mon
+    - sun
+    id: morning
+  - trigger: time
+    at: '11:00:00'
+    weekday:
+    - sat
+    - fri
+    - thu
+    - wed
+    - tue
+    - mon
+    - sun
+    id: day
+  - trigger: time
+    at: '19:00:00'
+    weekday:
+    - sat
+    - fri
+    - thu
+    - wed
+    - tue
+    - mon
+    - sun
+    id: evening
+  - trigger: time
+    at: '23:00:00'
+    weekday:
+    - sat
+    - fri
+    - thu
+    - wed
+    - tue
+    - mon
+    - sun
+    id: night
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - morning
+      sequence:
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id: input_select.time_of_day_mode
+        data:
+          option: Morning
+    - conditions:
+      - condition: trigger
+        id:
+        - day
+      sequence:
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id: input_select.time_of_day_mode
+        data:
+          option: Day
+    - conditions:
+      - condition: trigger
+        id:
+        - evening
+      sequence:
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id: input_select.time_of_day_mode
+        data:
+          option: Evening
+    - conditions:
+      - condition: trigger
+        id:
+        - night
+        - evening
+      sequence:
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id: input_select.time_of_day_mode
+        data:
+          option: Night
+  mode: single
+- id: '1774296940266'
+  alias: X Light Motion Activation
+  description: Controls Lighting in the room based on a motion sensor.
+  triggers:
+  - type: occupied
+    device_id: f17a1598e6d915bce0f8a60452f0e8c0
+    entity_id: 2c51b3a639e8469c0d30d6860798ecac
+    domain: binary_sensor
+    trigger: device
+  conditions:
+  - condition: state
+    entity_id: input_select.x_lighting_mode
+    state:
+    - Auto
+  actions:
+  - alias: Turn on the light
+    action: light.turn_on
+    data: {}
+    target:
+      entity_id: light.x_light
+  - alias: Wait until there is no motion from device
+    wait_for_trigger:
+    - trigger: state
+      entity_id:
+      - binary_sensor.x_room_motion_sensor
+      from:
+      - 'on'
+      to:
+      - 'off'
+  - alias: Wait the number of seconds that has been set
+    delay:
+      hours: 0
+      minutes: 15
+      seconds: 0
+      milliseconds: 0
+  - alias: Turn off the light
+    action: light.turn_off
+    data: {}
+    target:
+      entity_id: light.x_light
+  mode: restart
+  max_exceeded: silent
+- id: '1774297564668'
+  alias: X Lighting Mode Reset to Auto
+  description: Resets the control mode of the lights to Auto after manual input.
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_select.x_lighting_mode
+    to:
+    - Off (Timer)
+    for:
+      hours: 2
+      minutes: 0
+      seconds: 0
+    id: off reset
+  - trigger: state
+    entity_id:
+    - input_select.x_lighting_mode
+    to:
+    - On (Timer)
+    for:
+      hours: 2
+      minutes: 0
+      seconds: 0
+    id: on reset
+  - trigger: state
+    entity_id:
+    - input_select.time_of_day_mode
+    to:
+    - Morning
+  conditions: []
+  actions:
+  - action: input_select.select_option
+    metadata: {}
+    target:
+      entity_id:
+      - input_select.x_lighting_mode
+    data:
+      option: Auto
+  - condition: state
+    state:
+    - 'off'
+    entity_id: binary_sensor.0x54ef4410014a7576_occupancy
+  - action: light.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id: light.x_light
+  mode: single
+- id: '1774297821481'
+  alias: X Light Buttons
+  description: Maps IKEA SOMRIG buttons (2 buttons) to different actions to control
+    the lights in the room. An alternative input is made for saving a replay video
+    of computer screen when streaming to the living room TV.
+  triggers:
+  - domain: mqtt
+    device_id: 084c8efe4b677ba2ff34e66a271c3a1a
+    type: action
+    subtype: 1_short_release
+    trigger: device
+    id: on_single
+  - domain: mqtt
+    device_id: 084c8efe4b677ba2ff34e66a271c3a1a
+    type: action
+    subtype: 1_double_press
+    trigger: device
+    id: on_double
+  - domain: mqtt
+    device_id: 084c8efe4b677ba2ff34e66a271c3a1a
+    type: action
+    subtype: 1_long_press
+    trigger: device
+    id: on_long
+  - domain: mqtt
+    device_id: 084c8efe4b677ba2ff34e66a271c3a1a
+    type: action
+    subtype: 2_short_release
+    trigger: device
+    id: off_single
+  - domain: mqtt
+    device_id: 084c8efe4b677ba2ff34e66a271c3a1a
+    type: action
+    subtype: 2_double_press
+    trigger: device
+    id: off_double
+  - domain: mqtt
+    device_id: 084c8efe4b677ba2ff34e66a271c3a1a
+    type: action
+    subtype: 2_long_press
+    trigger: device
+    id: off_long
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - off_single
+      sequence:
+      - action: light.turn_off
+        metadata: {}
+        target:
+          entity_id:
+          - light.x_light
+        data: {}
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id:
+          - input_select.x_lighting_mode
+        data:
+          option: Off (Timer)
+    - conditions:
+      - condition: trigger
+        id:
+        - off_double
+      sequence:
+      - action: light.turn_off
+        metadata: {}
+        target:
+          entity_id:
+          - light.x_light
+        data: {}
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id:
+          - input_select.x_lighting_mode
+        data:
+          option: Off (Morning)
+    - conditions:
+      - condition: trigger
+        id:
+        - on_single
+      sequence:
+      - if:
+        - condition: not
+          conditions:
+          - condition: state
+            entity_id: input_select.x_lighting_mode
+            state:
+            - Auto
+        then:
+        - action: light.turn_off
+          metadata: {}
+          target:
+            entity_id: light.x_light
+          data: {}
+        - delay:
+            hours: 0
+            minutes: 0
+            seconds: 0
+            milliseconds: 100
+      - action: light.turn_on
+        metadata: {}
+        target:
+          entity_id:
+          - light.x_light
+        data: {}
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id:
+          - input_select.x_lighting_mode
+        data:
+          option: Auto
+    - conditions:
+      - condition: trigger
+        id:
+        - on_double
+      sequence:
+      - action: light.turn_on
+        metadata: {}
+        target:
+          entity_id:
+          - light.x_light
+        data:
+          color_temp_kelvin: 6500
+          brightness_pct: 100
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 0
+          milliseconds: 100
+      - action: light.turn_on
+        metadata: {}
+        target:
+          entity_id:
+          - light.x_light
+        data:
+          color_temp_kelvin: 6500
+          brightness_pct: 100
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id:
+          - input_select.x_lighting_mode
+        data:
+          option: On (Timer)
+    - conditions:
+      - condition: trigger
+        id:
+        - off_long
+        - on_long
+      sequence:
+      - action: button.press
+        metadata: {}
+        target:
+          entity_id: button.xpc_obs_save_replay
+        data: {}
+  mode: restart
+- id: '1775415056062'
+  alias: Printer Ink Alert System
+  description: Sends a persistent phone notification when the printer's ink level
+    gets low.
+  triggers:
+  - entity_id:
+    - sensor.epson_et_8550_series_c
+    - sensor.epson_et_8550_series_gy
+    - sensor.epson_et_8550_series_m
+    - sensor.epson_et_8550_series_mb
+    - sensor.epson_et_8550_series_pb
+    - sensor.epson_et_8550_series_y
+    below: 25
+    id: send_alert
+    trigger: numeric_state
+  - entity_id:
+    - sensor.epson_et_8550_series_c
+    - sensor.epson_et_8550_series_gy
+    - sensor.epson_et_8550_series_m
+    - sensor.epson_et_8550_series_mb
+    - sensor.epson_et_8550_series_pb
+    - sensor.epson_et_8550_series_y
+    above: 25
+    id: clear_alert
+    trigger: numeric_state
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: send_alert
+      sequence:
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.printer_ink_level_low
+        data: {}
+      - action: script.create_persistent_notification
+        metadata: {}
+        data:
+          topic: X Notifications
+          task_helper: input_boolean.printer_ink_level_low
+          message: Ink level low. Please refill.
+          title: Alert
+    - conditions:
+      - condition: trigger
+        id: clear_alert
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id: input_boolean.printer_ink_level_low
+        data: {}
+  mode: single
+- id: '1775427245179'
+  alias: Persistent Notification Manager
+  description: Resends notifications if swiped while task is incomplete
+  triggers:
+  - trigger: event
+    event_type: mobile_app_notification_cleared
+  conditions:
+  - condition: template
+    value_template: "{% set tag = trigger.event.data.tag %}\n{% if tag and ':' in
+      tag %}\n  {% set helper = tag.split(':')[1] %}\n  {# Nag if: it's a 'Task' and
+      is OFF, OR it's an 'Alert/Low' and is ON #}\n  {{ is_state(helper, 'on') }}\n{%
+      else %}\n  false\n{% endif %}\n"
+  actions:
+  - action: ticker.notify
+    data:
+      category: '{{ trigger.event.data.tag.split('':'')[0] }}'
+      title: '{{ trigger.event.data.title }}'
+      message: '{{ trigger.event.data.message }}'
+      data:
+        tag: '{{ trigger.event.data.tag }}'
+- id: '1775432947763'
+  alias: X Light Off When in Bed
+  description: Uses a vibration sensor under bed mattress to control lighting.
+  triggers:
+  - domain: mqtt
+    device_id: 275da48458416a3803f1a7a6b29faeaf
+    type: action
+    subtype: movement
+    trigger: device
+  conditions:
+  - condition: state
+    entity_id: input_select.time_of_day_mode
+    state:
+    - Night
+  actions:
+  - action: light.turn_off
+    metadata: {}
+    target:
+      entity_id: light.x_light
+    data: {}
+  mode: single
+- id: '1775589257276'
+  alias: Toilet Light Automation
+  description: Controls toilet lighting based on time of day, triggered by vibration
+    sensor on the door or a motion sensor on the wall.
+  triggers:
+  - trigger: mqtt
+    options:
+      topic: zigbee2mqtt/Vibration Sensor
+      value_template: '{{ value_json.action }}'
+      payload: movement
+  - trigger: state
+    entity_id: binary_sensor.toilet_motion_sensor_occupancy
+    to: 'on'
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.time_of_day_mode
+        state:
+        - Night
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: light.toilet_light
+        data:
+          rgb_color:
+          - 255
+          - 157
+          - 157
+    default:
+    - if:
+      - condition: state
+        entity_id: input_select.vibe_mode
+        state:
+        - Party
+        - Sauna
+        - Cozy Nook
+        - Movie
+      then:
+      - action: light.turn_on
+        target:
+          entity_id: light.toilet_light
+        data:
+          rgb_color:
+          - 255
+          - 0
+          - 0
+      else:
+      - action: light.turn_on
+        target:
+          entity_id: light.toilet_light
+        data: {}
+    - action: light.turn_on
+      metadata: {}
+      target:
+        entity_id: light.toilet_cabinet_light
+      data: {}
+  - wait_template: '{{ is_state(''binary_sensor.toilet_motion_sensor_occupancy'',
+      ''off'') }}'
+  - delay:
+      hours: 0
+      minutes: 15
+      seconds: 0
+      milliseconds: 0
+  - action: light.turn_off
+    target:
+      entity_id: light.toilet_lights
+  mode: restart
+- id: '1780311054979'
+  alias: Boot Up
+  description: Resets correct values used by other automations after a system restart.
+  triggers:
+  - trigger: homeassistant
+    event: start
+  actions:
+  - if:
+    - condition: state
+      entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_1
+      state: 'off'
+    then:
+    - action: media_player.volume_set
+      target:
+        entity_id: media_player.janitor_primary
+      data:
+        volume_level: 0
+  - action: input_boolean.turn_off
+    metadata: {}
+    target:
+      entity_id: input_boolean.jungle_easter_egg_played
+    data: {}
+- id: '1782341081247'
+  alias: Jungle Sound
+  description: Controls primary and secondary audiostream based on bathroom presence
+    and time of day. Creates a jungle-themed ambience in the bathroom with a few eastereggs.
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_1
+    to: 'on'
+    id: room_entered
+  - trigger: state
+    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_1
+    to: 'off'
+    id: room_left
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 10
+  - trigger: state
+    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_3
+    to: 'on'
+    id: toilet_occupied
+  - trigger: state
+    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_3
+    to: 'off'
+    id: toilet_vacant
+  - trigger: state
+    entity_id: input_select.time_of_day_mode
+    id: time_changed
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: room_entered
+      sequence:
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: media_player.janitor_primary
+            state:
+            - paused
+            - 'off'
+            - idle
+          sequence:
+          - action: media_player.media_play
+            target:
+              entity_id: media_player.janitor_primary
+        - conditions:
+          - condition: state
+            entity_id: media_player.janitor_primary
+            state: playing
+          sequence: []
+        default:
+        - action: script.jungle_audio_select_playlist
+          metadata: {}
+          data: {}
+      - action: script.universal_volume_fade
+        metadata: {}
+        data:
+          duration_seconds: 1
+          steps: 50
+          target_player: media_player.janitor_primary
+          target_volume: 0.5
+    - conditions:
+      - condition: trigger
+        id: toilet_occupied
+      - condition: state
+        entity_id: input_boolean.jungle_easter_egg_played
+        state: 'off'
+      sequence:
+      - action: media_player.repeat_set
+        target:
+          entity_id: media_player.janitor_secondary
+        data:
+          repeat: 'off'
+      - action: media_player.shuffle_set
+        target:
+          entity_id: media_player.janitor_secondary
+        data:
+          shuffle: false
+      - action: media_player.volume_set
+        target:
+          entity_id: media_player.janitor_secondary
+        data:
+          volume_level: 0
+      - action: music_assistant.play_media
+        target:
+          entity_id: media_player.janitor_secondary
+        data:
+          media_id: Jungle Extra
+          media_type: playlist
+          enqueue: replace
+      - action: script.universal_volume_fade
+        metadata: {}
+        data:
+          duration_seconds: 5
+          steps: 50
+          target_player: media_player.janitor_secondary
+          target_volume: 0.42
+      - action: script.universal_volume_fade
+        metadata: {}
+        data:
+          duration_seconds: 5
+          steps: 50
+          target_player: media_player.janitor_primary
+          target_volume: 0.45
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.jungle_easter_egg_played
+    - conditions:
+      - condition: trigger
+        id: toilet_vacant
+      sequence:
+      - action: script.universal_volume_fade
+        metadata: {}
+        data:
+          duration_seconds: 5
+          steps: 50
+          target_player: media_player.janitor_secondary
+          target_volume: 0
+      - action: media_player.media_stop
+        target:
+          entity_id: media_player.janitor_secondary
+        data: {}
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_1
+            state:
+            - 'on'
+          sequence:
+          - action: script.universal_volume_fade
+            metadata: {}
+            data:
+              duration_seconds: 5
+              steps: 50
+              target_player: media_player.janitor_primary
+              target_volume: 0.5
+        default:
+        - action: script.universal_volume_fade
+          metadata: {}
+          data:
+            duration_seconds: 5
+            steps: 50
+            target_player: media_player.janitor_primary
+            target_volume: 0
+        - action: media_player.media_stop
+          target:
+            entity_id: media_player.janitor_primary
+    - conditions:
+      - condition: trigger
+        id: room_left
+      sequence:
+      - action: script.universal_volume_fade
+        metadata: {}
+        data:
+          duration_seconds: 2.5
+          steps: 50
+          target_player: media_player.janitor_primary
+          target_volume: 0
+      - action: media_player.media_stop
+        target:
+          entity_id: media_player.janitor_primary
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.jungle_easter_egg_played
+    - conditions:
+      - condition: trigger
+        id: time_changed
+      sequence:
+      - action: script.jungle_audio_select_playlist
+        metadata: {}
+        data: {}
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_1
+            state: 'off'
+          sequence:
+          - action: media_player.media_stop
+            target:
+              entity_id: media_player.janitor_primary
+  mode: queued
+  max: 5
+- id: '1784909281271'
+  alias: Janitor Speakers Self-Heal (SSH Restart + MA Reload)
+  description: Tries to restore bathroom speaker system following a malfunction and
+    sends a notification.
+  triggers:
+  - trigger: state
+    entity_id: media_player.janitor_primary
+    to: unavailable
+    for:
+      minutes: 3
+    id: primary_unavailable
+  - trigger: state
+    entity_id:
+    - media_player.janitor_secondary
+    to:
+    - unavailable
+    for:
+      minutes: 3
+    id: secondary_unavailable
+  conditions: []
+  actions:
+  - action: ticker.notify
+    metadata: {}
+    data:
+      actions: category_default
+      category: X Notifications
+      title: PROBLEM
+      message: Janitor speakers are malfunctioning.
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - primary_unavailable
+      sequence:
+      - action: shell_command.reboot_janitor_speaker
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - secondary_unavailable
+      sequence:
+      - action: shell_command.reboot_janitor_speaker_secondary
+        data: {}
+  - action: homeassistant.reload_config_entry
+    target:
+      entity_id: media_player.janitor_primary
+  mode: queued
+  max: 3
+- id: '1785082621461'
+  alias: Home Assistant Auto-update on a schedule base v2026.6.0
+  description: Automatic updates
+  use_blueprint:
+    path: edwardtfn/auto_update_scheduled.yaml
+    input:
+      schedule_entity: schedule.ha_update_window
+- id: '1785574877698'
+  alias: Shopping List Reminder
+  description: Sends a phone notification when phone enters a grocery store area.
+  triggers:
+  - trigger: state
+    entity_id:
+    - person.aksu
+    to:
+    - Main Grocery Store
+    - 24h Store
+    - Nearby Shopping Center
+    for:
+      hours: 0
+      minutes: 1
+      seconds: 0
+  - trigger: template
+    value_template: '{{ states(''input_text.car_bt_mac'') in (state_attr(''sensor.x_phone_bluetooth_connection'',
+      ''connected_paired_devices'') | string) }}'
+  conditions:
+  - condition: todo.incomplete
+    target:
+      entity_id: todo.shopping_list
+    options:
+      for: 00:00:00
+      threshold:
+        type: above
+        value:
+          active_choice: number
+          number: 0
+  - condition: not
+    conditions:
+    - condition: template
+      value_template: '{{ states(''sensor.x_phone_wi_fi_connection'') == states(''input_text.home_ssid'')
+        }}'
+  actions:
+  - action: todo.get_items
+    metadata: {}
+    target:
+      entity_id: todo.shopping_list
+    data:
+      status: needs_action
+    response_variable: my_shopping_list
+  - action: ticker.notify
+    metadata: {}
+    data:
+      actions: category_default
+      category: X Notifications
+      title: Shopping List Reminder
+      message: "{% for item in my_shopping_list['todo.shopping_list']['items'] %}\n
+        \         • {{ item.summary }}\n{% endfor %}"
+  mode: single
