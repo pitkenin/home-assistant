@@ -1498,3 +1498,16 @@
       message: "{% for item in my_shopping_list['todo.shopping_list']['items'] %}\n
         \         • {{ item.summary }}\n{% endfor %}"
   mode: single
+- id: '1785603288738'
+  alias: Daily config export to Git
+  description: Starts the Git Exporter add-on once a day. The add-on is one-shot,
+    so without this it would only ever run on Home Assistant restart, and the public
+    README would go stale.
+  triggers:
+  - trigger: time
+    at: 04:00:00
+  actions:
+  - action: hassio.addon_start
+    data:
+      addon: 68413af6_git-exporter
+  mode: single
