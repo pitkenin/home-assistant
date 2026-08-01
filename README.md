@@ -2,10 +2,11 @@
 
 Documentation of the smart home project I've been building with Home Assistant.
 
-Keeping it written by hand was never going to happen. Every tweak and every new
-automation would mean editing a README, leaving me with less time for my projects (including this one). 
-So, I automated it. The overview below is generated from my actual automation config and rewritten daily if there were any changes made.
-And the best part is: I don't even need to think about it. You can read about the technical details at the end of this file. 
+I figured that if I'm automating the house, the documentation of it ought to be automated as well. And indeed this page is.
+It's generated from my actual automation config and a set of accurately tuned custom instructions for the AI model, and it rewrites itself whenever I make changes to my smart home. 
+There's a description of how that works at the end of the file.
+
+And the best part is: I don't even need to think about it anymore. It just works.
 
 But first, here's the interesting part:
 
