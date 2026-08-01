@@ -84,5 +84,5 @@ power. A battery IR blaster covers the devices with no network control.
 Audio runs on a separate Raspberry Pi Zero 2 W in the bathroom, driving two
 Squeezelite instances through a DeLOCK 7.1 USB sound card, Y-split to a pair of
 Logitech Z150s and a pair of Trust Polo 2.0s. Music Assistant controls sounds and music.
-Elsewhere there's a NVIDIA SHIELD, a Google Nest Mini, a Roborock S5 Max, and an Epson ET-8550.
+Elsewhere there's an NVIDIA SHIELD, a Google Nest Mini, a Roborock S5 Max, and an Epson ET-8550.
 
