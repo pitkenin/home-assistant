@@ -1394,8 +1394,8 @@
   max: 5
 - id: '1784909281271'
   alias: Janitor Speakers Self-Heal (SSH Restart + MA Reload)
-  description: Tries to restore bathroom speaker system following a malfunction and
-    sends a notification.
+  description: If speakers malfunction, tries to restore bathroom speaker system following
+    a malfunction and sends a notification.
   triggers:
   - trigger: state
     entity_id: media_player.janitor_primary
