@@ -1,4 +1,4 @@
-# home-assistant
+# ✨ home-assistant
 
 Documentation of the smart home project I've been building with Home Assistant.
 
@@ -10,7 +10,7 @@ There's a description of how that works at the end of the file.
 
 But first, here's the interesting part:
 
-## The Smart Home
+## 🏡 The Smart Home
 
 <!-- START_AI_SUMMARY -->
 
@@ -43,7 +43,7 @@ The bigger this system gets, the less I want to be the one who notices when some
 
 <!-- END_AI_SUMMARY -->
 
-## How the automatic documentation works
+## ⚙️ How the automatic documentation works
 
 ```mermaid
 flowchart LR
@@ -71,7 +71,7 @@ the run fails and the README is left alone.
 
 
 
-## Hardware
+## 🛠️ Hardware
 
 Home Assistant Green serves as the hub, with a Zigbee2MQTT bridge for the Zigbee side.
 
