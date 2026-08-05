@@ -359,7 +359,7 @@
         target:
           entity_id: input_select.hallway_lighting_mode
         data:
-          option: Off (Timer)
+          option: Timer
     - conditions:
       - condition: trigger
         id:
@@ -375,7 +375,7 @@
         target:
           entity_id: input_select.hallway_lighting_mode
         data:
-          option: Off (Morning)
+          option: Morning
     - conditions:
       - condition: trigger
         id:
@@ -439,7 +439,7 @@
         target:
           entity_id: input_select.hallway_lighting_mode
         data:
-          option: On (Timer)
+          option: Timer
   mode: restart
 - id: '1774199438030'
   alias: Hallway Lights Reset to Auto Mode
@@ -450,22 +450,12 @@
     entity_id:
     - input_select.hallway_lighting_mode
     to:
-    - Off (Timer)
+    - Timer
     for:
       hours: 2
       minutes: 0
       seconds: 0
     id: off reset
-  - trigger: state
-    entity_id:
-    - input_select.hallway_lighting_mode
-    to:
-    - On (Timer)
-    for:
-      hours: 2
-      minutes: 0
-      seconds: 0
-    id: on reset
   - trigger: state
     entity_id:
     - input_select.time_of_day_mode
