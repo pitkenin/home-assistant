@@ -67,9 +67,9 @@
   mode: restart
   max_exceeded: silent
 - id: '1773950827765'
-  alias: Turn on Jungle Cabinet Light
-  description: Control the bathroom mirror cabinet light based on presense in front
-    of the cabinet
+  alias: Turn on Jungle Sink Light
+  description: Control the bathroom mirror sink light based on presence in front of
+    the sink
   triggers:
   - type: occupied
     device_id: 05e258c366e49a46b100398b9505ffd9
@@ -286,7 +286,8 @@
       - action: light.turn_on
         metadata: {}
         target:
-          entity_id: light.jungle_ceiling
+          entity_id:
+          - light.jungle_ceiling_light
         data:
           brightness_pct: 100
     - conditions:
@@ -297,7 +298,8 @@
       - action: light.turn_off
         metadata: {}
         target:
-          entity_id: light.jungle_ceiling
+          entity_id:
+          - light.jungle_ceiling_light
         data: {}
   mode: single
 - id: '1774198810880'
@@ -442,7 +444,7 @@
           option: Timer
   mode: restart
 - id: '1774199438030'
-  alias: Hallway Lights Reset to Auto Mode
+  alias: Hallway Lighting Reset to Auto Mode
   description: Resets the control mode of the hallway lights to Auto after manual
     input.
   triggers:
@@ -455,13 +457,34 @@
       hours: 2
       minutes: 0
       seconds: 0
-    id: off reset
+    id: timer
   - trigger: state
     entity_id:
     - input_select.time_of_day_mode
     to:
     - Morning
-  conditions: []
+    id: morning
+  conditions:
+  - condition: or
+    conditions:
+    - condition: and
+      conditions:
+      - condition: state
+        entity_id: input_select.hallway_lighting_mode
+        state:
+        - Timer
+      - condition: trigger
+        id:
+        - timer
+    - condition: and
+      conditions:
+      - condition: state
+        entity_id: input_select.hallway_lighting_mode
+        state:
+        - Morning
+      - condition: trigger
+        id:
+        - morning
   actions:
   - action: input_select.select_option
     metadata: {}
@@ -639,14 +662,16 @@
       sequence:
       - action: light.turn_on
         target:
-          entity_id: light.monkey_light_local
+          entity_id:
+          - light.monkey_light
         data:
           brightness_pct: 1
       - delay:
           milliseconds: 100
       - action: light.turn_on
         target:
-          entity_id: light.monkey_light_local
+          entity_id:
+          - light.monkey_light
         data:
           brightness_pct: 20
           transition: 2
@@ -656,12 +681,14 @@
       sequence:
       - action: light.turn_off
         target:
-          entity_id: light.monkey_light_local
+          entity_id:
+          - light.monkey_light
         data: {}
       - action: light.turn_off
         metadata: {}
         target:
-          entity_id: light.jungle_ceiling
+          entity_id:
+          - light.jungle_ceiling_light
         data: {}
   mode: restart
   max_exceeded: silent
@@ -804,54 +831,6 @@
       entity_id: light.x_light
   mode: restart
   max_exceeded: silent
-- id: '1774297564668'
-  alias: X Lighting Mode Reset to Auto
-  description: Resets the control mode of the lights to Auto after manual input.
-  triggers:
-  - trigger: state
-    entity_id:
-    - input_select.x_lighting_mode
-    to:
-    - Off (Timer)
-    for:
-      hours: 2
-      minutes: 0
-      seconds: 0
-    id: off reset
-  - trigger: state
-    entity_id:
-    - input_select.x_lighting_mode
-    to:
-    - On (Timer)
-    for:
-      hours: 2
-      minutes: 0
-      seconds: 0
-    id: on reset
-  - trigger: state
-    entity_id:
-    - input_select.time_of_day_mode
-    to:
-    - Morning
-  conditions: []
-  actions:
-  - action: input_select.select_option
-    metadata: {}
-    target:
-      entity_id:
-      - input_select.x_lighting_mode
-    data:
-      option: Auto
-  - condition: state
-    state:
-    - 'off'
-    entity_id: binary_sensor.0x54ef4410014a7576_occupancy
-  - action: light.turn_off
-    metadata: {}
-    data: {}
-    target:
-      entity_id: light.x_light
-  mode: single
 - id: '1774297821481'
   alias: X Light Buttons
   description: Maps IKEA SOMRIG buttons (2 buttons) to different actions to control
@@ -914,7 +893,7 @@
           entity_id:
           - input_select.x_lighting_mode
         data:
-          option: Off (Timer)
+          option: Timer
     - conditions:
       - condition: trigger
         id:
@@ -932,7 +911,7 @@
           entity_id:
           - input_select.x_lighting_mode
         data:
-          option: Off (Morning)
+          option: Morning
     - conditions:
       - condition: trigger
         id:
@@ -1001,7 +980,7 @@
           entity_id:
           - input_select.x_lighting_mode
         data:
-          option: On (Timer)
+          option: Timer
     - conditions:
       - condition: trigger
         id:
@@ -1131,7 +1110,8 @@
       sequence:
       - action: light.turn_on
         target:
-          entity_id: light.toilet_light
+          entity_id:
+          - light.toilet_ceiling_light
         data:
           rgb_color:
           - 255
@@ -1163,7 +1143,8 @@
     - action: light.turn_on
       metadata: {}
       target:
-        entity_id: light.toilet_cabinet_light
+        entity_id:
+        - light.toilet_sink_light
       data: {}
   - wait_template: '{{ is_state(''binary_sensor.toilet_motion_sensor_occupancy'',
       ''off'') }}'
@@ -1530,3 +1511,367 @@
       item: '{{ trigger.event.data.action | replace(''MARK_DONE_'', '''') }}'
       status: completed
   mode: parallel
+- id: '1786040400781'
+  alias: Jungle Ceiling Lighting Reset to Auto Mode
+  description: Resets the control mode of the jungle ceiling lights to Auto after
+    manual input.
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_select.jungle_ceiling_lighting_mode
+    to:
+    - Timer
+    for:
+      hours: 2
+      minutes: 0
+      seconds: 0
+    id: timer
+  - trigger: state
+    entity_id:
+    - input_select.time_of_day_mode
+    to:
+    - Morning
+    id: morning
+  conditions:
+  - condition: or
+    conditions:
+    - condition: and
+      conditions:
+      - condition: state
+        entity_id: input_select.jungle_ceiling_lighting_mode
+        state:
+        - Timer
+      - condition: trigger
+        id:
+        - timer
+    - condition: and
+      conditions:
+      - condition: state
+        entity_id: input_select.jungle_ceiling_lighting_mode
+        state:
+        - Morning
+      - condition: trigger
+        id:
+        - morning
+  actions:
+  - action: input_select.select_option
+    metadata: {}
+    target:
+      entity_id:
+      - input_select.jungle_ceiling_lighting_mode
+    data:
+      option: Auto
+  - condition: state
+    state:
+    - 'off'
+    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_1
+  - action: light.turn_off
+    metadata: {}
+    target:
+      entity_id:
+      - light.jungle_ceiling_light
+    data: {}
+  mode: single
+- id: '1786040526990'
+  alias: Monkey Lighting Reset to Auto
+  description: Resets the control mode of the Monkey Light to Auto after manual input.
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_select.monkey_lighting_mode
+    to:
+    - Timer
+    for:
+      hours: 2
+      minutes: 0
+      seconds: 0
+    id: timer
+  - trigger: state
+    entity_id:
+    - input_select.time_of_day_mode
+    to:
+    - Morning
+    id: morning
+  conditions:
+  - condition: or
+    conditions:
+    - condition: and
+      conditions:
+      - condition: state
+        entity_id: input_select.monkey_lighting_mode
+        state:
+        - Timer
+      - condition: trigger
+        id:
+        - timer
+    - condition: and
+      conditions:
+      - condition: state
+        entity_id: input_select.monkey_lighting_mode
+        state:
+        - Morning
+      - condition: trigger
+        id:
+        - morning
+  actions:
+  - action: input_select.select_option
+    metadata: {}
+    target:
+      entity_id:
+      - input_select.monkey_lighting_mode
+    data:
+      option: Auto
+  - condition: state
+    state:
+    - 'off'
+    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_1
+  - action: light.turn_off
+    metadata: {}
+    target:
+      entity_id:
+      - light.monkey_light
+    data: {}
+  mode: single
+- id: '1786040923066'
+  alias: Jungle Sink Lighting Reset to Auto
+  description: Resets the control mode of the Jungle Sink Light to Auto after manual
+    input.
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_select.jungle_cabinet_lighting_mode
+    to:
+    - Timer
+    for:
+      hours: 2
+      minutes: 0
+      seconds: 0
+    id: timer
+  - trigger: state
+    entity_id:
+    - input_select.time_of_day_mode
+    to:
+    - Morning
+    id: morning
+  conditions:
+  - condition: or
+    conditions:
+    - condition: and
+      conditions:
+      - condition: state
+        entity_id: input_select.jungle_cabinet_lighting_mode
+        state:
+        - Timer
+      - condition: trigger
+        id:
+        - timer
+    - condition: and
+      conditions:
+      - condition: state
+        entity_id: input_select.jungle_cabinet_lighting_mode
+        state:
+        - Morning
+      - condition: trigger
+        id:
+        - morning
+  actions:
+  - action: input_select.select_option
+    metadata: {}
+    target:
+      entity_id:
+      - input_select.jungle_cabinet_lighting_mode
+    data:
+      option: Auto
+  - condition: state
+    state:
+    - 'off'
+    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_2
+  - action: light.turn_off
+    metadata: {}
+    target:
+      entity_id:
+      - light.jungle_sink_light
+    data: {}
+  mode: single
+- id: '1786041383309'
+  alias: Toilet Ceiling Lighting Reset to Auto
+  description: Resets the control mode of the Toilet Ceiling Light to Auto after manual
+    input.
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_select.toilet_ceiling_lighting_mode
+    to:
+    - Timer
+    for:
+      hours: 2
+      minutes: 0
+      seconds: 0
+    id: timer
+  - trigger: state
+    entity_id:
+    - input_select.time_of_day_mode
+    to:
+    - Morning
+    id: morning
+  conditions:
+  - condition: or
+    conditions:
+    - condition: and
+      conditions:
+      - condition: state
+        entity_id: input_select.toilet_ceiling_lighting_mode
+        state:
+        - Timer
+      - condition: trigger
+        id:
+        - timer
+    - condition: and
+      conditions:
+      - condition: state
+        entity_id: input_select.toilet_ceiling_lighting_mode
+        state:
+        - Morning
+      - condition: trigger
+        id:
+        - morning
+  actions:
+  - action: input_select.select_option
+    metadata: {}
+    target:
+      entity_id:
+      - input_select.toilet_ceiling_lighting_mode
+    data:
+      option: Auto
+  - condition: state
+    state:
+    - 'off'
+    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_3
+  - action: light.turn_off
+    metadata: {}
+    target:
+      entity_id:
+      - light.toilet_ceiling_light
+    data: {}
+  mode: single
+- id: '1786041440281'
+  alias: Toilet Sink Lighting Reset to Auto
+  description: Resets the control mode of the Toilet Sink Light to Auto after manual
+    input.
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_select.toilet_cabinet_lighting_mode
+    to:
+    - Timer
+    for:
+      hours: 2
+      minutes: 0
+      seconds: 0
+    id: timer
+  - trigger: state
+    entity_id:
+    - input_select.time_of_day_mode
+    to:
+    - Morning
+    id: morning
+  conditions:
+  - condition: or
+    conditions:
+    - condition: and
+      conditions:
+      - condition: state
+        entity_id: input_select.toilet_cabinet_lighting_mode
+        state:
+        - Timer
+      - condition: trigger
+        id:
+        - timer
+    - condition: and
+      conditions:
+      - condition: state
+        entity_id: input_select.toilet_cabinet_lighting_mode
+        state:
+        - Morning
+      - condition: trigger
+        id:
+        - morning
+  actions:
+  - action: input_select.select_option
+    metadata: {}
+    target:
+      entity_id:
+      - input_select.toilet_cabinet_lighting_mode
+    data:
+      option: Auto
+  - condition: state
+    state:
+    - 'off'
+    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_3
+  - action: light.turn_off
+    metadata: {}
+    target:
+      entity_id:
+      - light.toilet_sink_light
+    data: {}
+  mode: single
+- id: '1786041614962'
+  alias: X Room Lighting Reset to Auto
+  description: Resets the control mode of the X Room Light to Auto after manual input.
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_select.x_lighting_mode
+    to:
+    - Timer
+    for:
+      hours: 2
+      minutes: 0
+      seconds: 0
+    id: timer
+  - trigger: state
+    entity_id:
+    - input_select.time_of_day_mode
+    to:
+    - Morning
+    id: morning
+  conditions:
+  - condition: or
+    conditions:
+    - condition: and
+      conditions:
+      - condition: state
+        entity_id: input_select.x_lighting_mode
+        state:
+        - Timer
+      - condition: trigger
+        id:
+        - timer
+    - condition: and
+      conditions:
+      - condition: state
+        entity_id: input_select.x_lighting_mode
+        state:
+        - Morning
+      - condition: trigger
+        id:
+        - morning
+  actions:
+  - action: input_select.select_option
+    metadata: {}
+    target:
+      entity_id:
+      - input_select.x_lighting_mode
+    data:
+      option: Auto
+  - condition: state
+    state:
+    - 'off'
+    entity_id: binary_sensor.0x54ef4410014a7576_occupancy
+  - action: light.turn_off
+    metadata: {}
+    target:
+      entity_id:
+      - light.x_light
+    data: {}
+  mode: single
