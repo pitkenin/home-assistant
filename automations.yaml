@@ -1,5 +1,5 @@
 - id: '1773949419676'
-  alias: Hallway Light Motion Activation
+  alias: (OLD) Hallway Light Motion Activation
   description: Controls the lights in the hallway based on a motion sensor.
   triggers:
   - type: occupied
@@ -39,7 +39,7 @@
   - wait_for_trigger:
     - trigger: state
       entity_id:
-      - binary_sensor.0x54ef4410014a6f50_occupancy
+      - binary_sensor.hallway_occupancy
       to:
       - 'off'
       for:
@@ -641,18 +641,24 @@
             media_type: playlist
   mode: single
 - id: '1774203682753'
-  alias: Monkey Light Motion Activation
+  alias: (OLD) Monkey Light Motion Activation
   description: Controls the main light in the bathroom based on a presense sensor.
   triggers:
   - trigger: state
-    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_1
-    from: 'off'
-    to: 'on'
+    entity_id:
+    - binary_sensor.jungle_presence
+    from:
+    - 'off'
+    to:
+    - 'on'
     id: 'on'
   - trigger: state
-    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_1
-    from: 'on'
-    to: 'off'
+    entity_id:
+    - binary_sensor.jungle_presence
+    from:
+    - 'on'
+    to:
+    - 'off'
     id: 'off'
   actions:
   - choose:
@@ -780,7 +786,6 @@
       - condition: trigger
         id:
         - night
-        - evening
       sequence:
       - action: input_select.select_option
         metadata: {}
@@ -1088,7 +1093,7 @@
     data: {}
   mode: single
 - id: '1775589257276'
-  alias: Toilet Light Automation
+  alias: (OLD) Toilet Light Automation
   description: Controls toilet lighting based on time of day, triggered by vibration
     sensor on the door or a motion sensor on the wall.
   triggers:
@@ -1163,24 +1168,23 @@
   triggers:
   - trigger: homeassistant
     event: start
-  actions:
-  - if:
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.jungle_presence
+    state:
+    - 'off'
+  - condition: not
+    conditions:
     - condition: state
-      entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_1
-      state: 'off'
-    then:
-    - if:
-      - condition: state
-        entity_id: media_player.janitor_primary
-        state:
-        - unavailable
-      then: []
-      else:
-      - action: media_player.volume_set
-        target:
-          entity_id: media_player.janitor_primary
-        data:
-          volume_level: 0
+      entity_id: media_player.janitor_primary
+      state:
+      - unavailable
+  actions:
+  - action: media_player.volume_set
+    target:
+      entity_id: media_player.janitor_primary
+    data:
+      volume_level: 0
   - action: input_boolean.turn_off
     metadata: {}
     target:
@@ -1192,24 +1196,32 @@
     and time of day. Creates a jungle-themed ambience in the bathroom with a few eastereggs.
   triggers:
   - trigger: state
-    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_1
-    to: 'on'
+    entity_id:
+    - binary_sensor.jungle_presence
+    to:
+    - 'on'
     id: room_entered
   - trigger: state
-    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_1
-    to: 'off'
+    entity_id:
+    - binary_sensor.jungle_presence
+    to:
+    - 'off'
     id: room_left
     for:
       hours: 0
       minutes: 0
       seconds: 10
   - trigger: state
-    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_3
-    to: 'on'
+    entity_id:
+    - binary_sensor.jungle_toilet_presence
+    to:
+    - 'on'
     id: toilet_occupied
   - trigger: state
-    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_3
-    to: 'off'
+    entity_id:
+    - binary_sensor.jungle_toilet_presence
+    to:
+    - 'off'
     id: toilet_vacant
   - trigger: state
     entity_id: input_select.time_of_day_mode
@@ -1233,6 +1245,7 @@
           - action: media_player.media_play
             target:
               entity_id: media_player.janitor_primary
+            data: {}
         - conditions:
           - condition: state
             entity_id: media_player.janitor_primary
@@ -1313,7 +1326,7 @@
       - choose:
         - conditions:
           - condition: state
-            entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_1
+            entity_id: binary_sensor.jungle_presence
             state:
             - 'on'
           sequence:
@@ -1348,10 +1361,14 @@
           target_volume: 0
       - action: media_player.media_stop
         target:
-          entity_id: media_player.janitor_primary
+          entity_id:
+          - media_player.janitor_primary
+          - media_player.janitor_secondary
+        data: {}
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.jungle_easter_egg_played
+        data: {}
     - conditions:
       - condition: trigger
         id: time_changed
@@ -1362,12 +1379,16 @@
       - choose:
         - conditions:
           - condition: state
-            entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_1
-            state: 'off'
+            entity_id: binary_sensor.jungle_presence
+            state:
+            - 'off'
           sequence:
           - action: media_player.media_stop
             target:
-              entity_id: media_player.janitor_primary
+              entity_id:
+              - media_player.janitor_primary
+              - media_player.janitor_secondary
+            data: {}
   mode: queued
   max: 5
 - id: '1784909281271'
@@ -1564,7 +1585,7 @@
   - condition: state
     state:
     - 'off'
-    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_1
+    entity_id: binary_sensor.jungle_presence
   - action: light.turn_off
     metadata: {}
     target:
@@ -1624,7 +1645,7 @@
   - condition: state
     state:
     - 'off'
-    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_1
+    entity_id: binary_sensor.jungle_presence
   - action: light.turn_off
     metadata: {}
     target:
@@ -1639,7 +1660,7 @@
   triggers:
   - trigger: state
     entity_id:
-    - input_select.jungle_cabinet_lighting_mode
+    - input_select.jungle_sink_lighting_mode
     to:
     - Timer
     for:
@@ -1659,7 +1680,7 @@
     - condition: and
       conditions:
       - condition: state
-        entity_id: input_select.jungle_cabinet_lighting_mode
+        entity_id: input_select.jungle_sink_lighting_mode
         state:
         - Timer
       - condition: trigger
@@ -1668,7 +1689,7 @@
     - condition: and
       conditions:
       - condition: state
-        entity_id: input_select.jungle_cabinet_lighting_mode
+        entity_id: input_select.jungle_sink_lighting_mode
         state:
         - Morning
       - condition: trigger
@@ -1678,14 +1699,13 @@
   - action: input_select.select_option
     metadata: {}
     target:
-      entity_id:
-      - input_select.jungle_cabinet_lighting_mode
+      entity_id: input_select.jungle_sink_lighting_mode
     data:
       option: Auto
   - condition: state
     state:
     - 'off'
-    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_2
+    entity_id: binary_sensor.jungle_sink_presence
   - action: light.turn_off
     metadata: {}
     target:
@@ -1746,7 +1766,7 @@
   - condition: state
     state:
     - 'off'
-    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_3
+    entity_id: binary_sensor.toilet_motion_sensor_occupancy
   - action: light.turn_off
     metadata: {}
     target:
@@ -1761,7 +1781,7 @@
   triggers:
   - trigger: state
     entity_id:
-    - input_select.toilet_cabinet_lighting_mode
+    - input_select.toilet_sink_lighting_mode
     to:
     - Timer
     for:
@@ -1781,7 +1801,7 @@
     - condition: and
       conditions:
       - condition: state
-        entity_id: input_select.toilet_cabinet_lighting_mode
+        entity_id: input_select.toilet_sink_lighting_mode
         state:
         - Timer
       - condition: trigger
@@ -1790,7 +1810,7 @@
     - condition: and
       conditions:
       - condition: state
-        entity_id: input_select.toilet_cabinet_lighting_mode
+        entity_id: input_select.toilet_sink_lighting_mode
         state:
         - Morning
       - condition: trigger
@@ -1800,14 +1820,13 @@
   - action: input_select.select_option
     metadata: {}
     target:
-      entity_id:
-      - input_select.toilet_cabinet_lighting_mode
+      entity_id: input_select.toilet_sink_lighting_mode
     data:
       option: Auto
   - condition: state
     state:
     - 'off'
-    entity_id: binary_sensor.presence_sensor_fp2_1c80_presence_sensor_3
+    entity_id: binary_sensor.toilet_motion_sensor_occupancy
   - action: light.turn_off
     metadata: {}
     target:
@@ -1874,4 +1893,111 @@
       entity_id:
       - light.x_light
     data: {}
+  mode: single
+- id: '1786128416779'
+  alias: Monkey Light Automation
+  description: Controls the main light in the bathroom based on a presense sensor.
+  use_blueprint:
+    path: custom/vibe_motion_lighting.yaml
+    input:
+      no_motion_timeout: 1
+      lighting_mode_helper: input_select.monkey_lighting_mode
+      motion_sensor: binary_sensor.jungle_presence
+      target_light: light.monkey_light
+      tod_helper: input_select.time_of_day_mode
+- id: '1786131016658'
+  alias: Hallway Lights Automation
+  description: Controls the lights in the hallway based on a motion sensor.
+  use_blueprint:
+    path: custom/vibe_motion_lighting.yaml
+    input:
+      lighting_mode_helper: input_select.hallway_lighting_mode
+      motion_sensor: binary_sensor.hallway_occupancy
+      target_light: light.hallway_lights
+      tod_helper: input_select.time_of_day_mode
+      no_motion_timeout: 1
+- id: '1786132256262'
+  alias: Jungle Ceiling Light Automation
+  description: Controls the ceiling light in the bathroom based on a presense sensor.
+  use_blueprint:
+    path: custom/vibe_motion_lighting.yaml
+    input:
+      lighting_mode_helper: input_select.jungle_ceiling_lighting_mode
+      motion_sensor: binary_sensor.jungle_presence
+      target_light: light.jungle_ceiling_light
+      tod_helper: input_select.time_of_day_mode
+- id: '1786132326940'
+  alias: Jungle Sink Light Automation
+  description: Controls the sink light in the bathroom based on a presense area sensor.
+  use_blueprint:
+    path: custom/vibe_motion_lighting.yaml
+    input:
+      lighting_mode_helper: input_select.jungle_sink_lighting_mode
+      motion_sensor: binary_sensor.jungle_sink_presence
+      target_light: light.jungle_sink_light
+      tod_helper: input_select.time_of_day_mode
+      no_motion_timeout: 2
+- id: '1786132410261'
+  alias: Toilet Ceiling Light Automation
+  description: Controls toilet lighting based on time of day, triggered by vibration
+    sensor on the door or a motion sensor on the wall.
+  use_blueprint:
+    path: custom/vibe_motion_lighting.yaml
+    input:
+      lighting_mode_helper: input_select.toilet_ceiling_lighting_mode
+      motion_sensor: input_boolean.toilet_occupancy
+      target_light: light.toilet_ceiling_light
+      tod_helper: input_select.time_of_day_mode
+      no_motion_timeout: 900
+- id: '1786132455539'
+  alias: Toilet Sink Light Automation
+  description: Controls toilet lighting based on time of day, triggered by vibration
+    sensor on the door or a motion sensor on the wall.
+  use_blueprint:
+    path: custom/vibe_motion_lighting.yaml
+    input:
+      lighting_mode_helper: input_select.toilet_sink_lighting_mode
+      motion_sensor: input_boolean.toilet_occupancy
+      target_light: light.toilet_sink_light
+      tod_helper: input_select.time_of_day_mode
+      no_motion_timeout: 900
+- id: '1786134612900'
+  alias: Toilet Occupancy Helper
+  description: Combines two sensors into one helper boolean to keep track of toilet
+    occupancy
+  triggers:
+  - trigger: mqtt
+    options:
+      payload: movement
+      topic: zigbee2mqtt/Vibration Sensor
+  - trigger: occupancy.detected
+    target:
+      entity_id: binary_sensor.toilet_motion_sensor_occupancy
+    options:
+      behavior: each
+      for: 00:00:00
+  - trigger: occupancy.cleared
+    target:
+      entity_id: binary_sensor.toilet_motion_sensor_occupancy
+    options:
+      for: 00:00:00
+    id: occupancy cleared
+  conditions: []
+  actions:
+  - if:
+    - condition: trigger
+      id:
+      - occupancy cleared
+    then:
+    - action: input_boolean.turn_off
+      metadata: {}
+      target:
+        entity_id: input_boolean.toilet_occupancy
+      data: {}
+    else:
+    - action: input_boolean.turn_on
+      metadata: {}
+      target:
+        entity_id: input_boolean.toilet_occupancy
+      data: {}
   mode: single
