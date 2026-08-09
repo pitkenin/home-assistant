@@ -67,7 +67,7 @@
   mode: restart
   max_exceeded: silent
 - id: '1773950827765'
-  alias: Turn on Jungle Sink Light
+  alias: (OLD) Turn on Jungle Sink Light
   description: Control the bathroom mirror sink light based on presence in front of
     the sink
   triggers:
@@ -444,7 +444,7 @@
           option: Timer
   mode: restart
 - id: '1774199438030'
-  alias: Hallway Lighting Reset to Auto Mode
+  alias: (OLD) Hallway Lighting Reset to Auto Mode
   description: Resets the control mode of the hallway lights to Auto after manual
     input.
   triggers:
@@ -486,22 +486,36 @@
         id:
         - morning
   actions:
-  - action: input_select.select_option
-    metadata: {}
-    target:
-      entity_id: input_select.hallway_lighting_mode
-    data:
-      option: Auto
-  - condition: state
-    state:
-    - 'off'
-    entity_id: binary_sensor.0x54ef4410014a6f50_occupancy
-  - action: light.turn_off
-    metadata: {}
-    target:
+  - if:
+    - condition: state
+      entity_id: input_select.vibe_mode
+      state:
+      - Maintenance
+    then:
+    - action: input_select.select_option
+      metadata: {}
+      target:
+        entity_id: input_select.hallway_lighting_mode
+      data:
+        option: Infinite
+    else:
+    - action: input_select.select_option
+      metadata: {}
+      target:
+        entity_id: input_select.hallway_lighting_mode
+      data:
+        option: Auto
+    - condition: state
+      state:
+      - 'on'
       entity_id: light.hallway_lights
-    data: {}
-  mode: single
+    - action: automation.trigger
+      metadata: {}
+      target:
+        entity_id: automation.hallway_lights_automation
+      data:
+        skip_condition: false
+  mode: restart
 - id: '1774203301814'
   alias: Living Room Lights Manual Control
   description: Map living room lighting buttons (4 buttons) to different actions to
@@ -795,7 +809,7 @@
           option: Night
   mode: single
 - id: '1774296940266'
-  alias: X Light Motion Activation
+  alias: (OLD) X Light Motion Activation
   description: Controls Lighting in the room based on a motion sensor.
   triggers:
   - type: occupied
@@ -1210,7 +1224,7 @@
     for:
       hours: 0
       minutes: 0
-      seconds: 10
+      seconds: 2
   - trigger: state
     entity_id:
     - binary_sensor.jungle_toilet_presence
@@ -1226,42 +1240,61 @@
   - trigger: state
     entity_id: input_select.time_of_day_mode
     id: time_changed
-  conditions: []
+  conditions:
+  - condition: state
+    entity_id: input_boolean.jungle_music
+    state:
+    - 'on'
   actions:
+  - variables:
+      vibe_mode: '{{ states(''input_select.vibe_mode'') }}'
+      ambient_id: '{% set mode = states(''input_select.time_of_day_mode'') %} {% if
+        mode == ''Morning'' %} Jungle Morning {% elif mode == ''Day'' %} Jungle Day
+        {% else %} Jungle Night {% endif %}
+
+        '
+      vibe_settings:
+        Normal:
+          target: 0.45
+          track_2: 0.4
+        Movie:
+          target: 0.35
+          track_2: 0.3
+        Cozy Nook:
+          target: 0.35
+          track_2: 0.3
+        Sauna:
+          target: 0.45
+          track_2: 0.4
+        Party:
+          target: 0.5
+          track_2: 0.45
+        Maintenance:
+          target: 0
+          track_2: 0
+        Board Games:
+          target: 0.45
+          track_2: 0.4
+      settings: '{{ vibe_settings.get(vibe_mode, {''target'': 0.5, ''track_2'': 0.4})
+        }}'
+      target_vol: '{{ settings.target | float }}'
+      track_2_vol: '{{ settings.track_2 | float }}'
+      track_1_vol: "{% if track_2_vol >= target_vol %}\n  0.0\n{% else %}\n  {{ ((target_vol
+        ** 2 - track_2_vol ** 2) ** 0.5) | round(2) }}\n{% endif %}\n"
   - choose:
     - conditions:
       - condition: trigger
-        id: room_entered
+        id:
+        - room_entered
+        - time_changed
       sequence:
-      - choose:
-        - conditions:
-          - condition: state
-            entity_id: media_player.janitor_primary
-            state:
-            - paused
-            - 'off'
-            - idle
-          sequence:
-          - action: media_player.media_play
-            target:
-              entity_id: media_player.janitor_primary
-            data: {}
-        - conditions:
-          - condition: state
-            entity_id: media_player.janitor_primary
-            state: playing
-          sequence: []
-        default:
-        - action: script.jungle_audio_select_playlist
-          metadata: {}
-          data: {}
-      - action: script.universal_volume_fade
+      - action: script.jungle_audio_request
         metadata: {}
         data:
-          duration_seconds: 1
-          steps: 50
-          target_player: media_player.janitor_primary
-          target_volume: 0.5
+          forceplay: true
+          category: ambient
+          sound_id: '{{ ambient_id }}'
+          volume: '{{ target_vol }}'
     - conditions:
       - condition: trigger
         id: toilet_occupied
@@ -1269,42 +1302,20 @@
         entity_id: input_boolean.jungle_easter_egg_played
         state: 'off'
       sequence:
-      - action: media_player.repeat_set
-        target:
-          entity_id: media_player.janitor_secondary
-        data:
-          repeat: 'off'
-      - action: media_player.shuffle_set
-        target:
-          entity_id: media_player.janitor_secondary
-        data:
-          shuffle: false
-      - action: media_player.volume_set
-        target:
-          entity_id: media_player.janitor_secondary
-        data:
-          volume_level: 0
-      - action: music_assistant.play_media
-        target:
-          entity_id: media_player.janitor_secondary
-        data:
-          media_id: Jungle Extra
-          media_type: playlist
-          enqueue: replace
-      - action: script.universal_volume_fade
-        metadata: {}
-        data:
-          duration_seconds: 5
-          steps: 50
-          target_player: media_player.janitor_secondary
-          target_volume: 0.42
-      - action: script.universal_volume_fade
-        metadata: {}
-        data:
-          duration_seconds: 5
-          steps: 50
-          target_player: media_player.janitor_primary
-          target_volume: 0.45
+      - parallel:
+        - action: script.jungle_audio_request
+          metadata: {}
+          data:
+            category: easter_egg
+            sound_id: Terraria Jungle
+            volume: '{{ track_2_vol }}'
+        - action: script.universal_volume_fade
+          metadata: {}
+          data:
+            duration_seconds: 5
+            steps: 50
+            target_player: media_player.janitor_primary
+            target_volume: '{{ track_1_vol }}'
       - action: input_boolean.turn_on
         target:
           entity_id: input_boolean.jungle_easter_egg_played
@@ -1312,83 +1323,47 @@
       - condition: trigger
         id: toilet_vacant
       sequence:
-      - action: script.universal_volume_fade
-        metadata: {}
-        data:
-          duration_seconds: 5
-          steps: 50
-          target_player: media_player.janitor_secondary
-          target_volume: 0
-      - action: media_player.media_stop
-        target:
-          entity_id: media_player.janitor_secondary
-        data: {}
-      - choose:
-        - conditions:
+      - parallel:
+        - action: script.jungle_audio_pause
+          metadata: {}
+          data:
+            category: easter_egg
+        - if:
           - condition: state
             entity_id: binary_sensor.jungle_presence
             state:
             - 'on'
-          sequence:
+          then:
           - action: script.universal_volume_fade
             metadata: {}
             data:
               duration_seconds: 5
               steps: 50
               target_player: media_player.janitor_primary
-              target_volume: 0.5
-        default:
-        - action: script.universal_volume_fade
-          metadata: {}
-          data:
-            duration_seconds: 5
-            steps: 50
-            target_player: media_player.janitor_primary
-            target_volume: 0
-        - action: media_player.media_stop
-          target:
-            entity_id: media_player.janitor_primary
+              target_volume: '{{ target_vol }}'
+          - action: script.jungle_audio_request
+            metadata: {}
+            data:
+              category: ambient
+              volume: '{{ target_vol }}'
+              sound_id: '"{{ ambient_id }}"'
+          else:
+          - action: script.jungle_audio_pause
+            metadata: {}
+            data:
+              category: ambient
     - conditions:
       - condition: trigger
         id: room_left
       sequence:
-      - action: script.universal_volume_fade
+      - action: script.jungle_audio_pause
         metadata: {}
         data:
-          duration_seconds: 2.5
-          steps: 50
-          target_player: media_player.janitor_primary
-          target_volume: 0
-      - action: media_player.media_stop
-        target:
-          entity_id:
-          - media_player.janitor_primary
-          - media_player.janitor_secondary
-        data: {}
+          category: ambient
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.jungle_easter_egg_played
         data: {}
-    - conditions:
-      - condition: trigger
-        id: time_changed
-      sequence:
-      - action: script.jungle_audio_select_playlist
-        metadata: {}
-        data: {}
-      - choose:
-        - conditions:
-          - condition: state
-            entity_id: binary_sensor.jungle_presence
-            state:
-            - 'off'
-          sequence:
-          - action: media_player.media_stop
-            target:
-              entity_id:
-              - media_player.janitor_primary
-              - media_player.janitor_secondary
-            data: {}
   mode: queued
   max: 5
 - id: '1784909281271'
@@ -1533,7 +1508,7 @@
       status: completed
   mode: parallel
 - id: '1786040400781'
-  alias: Jungle Ceiling Lighting Reset to Auto Mode
+  alias: (OLD) Jungle Ceiling Lighting Reset to Auto Mode
   description: Resets the control mode of the jungle ceiling lights to Auto after
     manual input.
   triggers:
@@ -1594,7 +1569,7 @@
     data: {}
   mode: single
 - id: '1786040526990'
-  alias: Monkey Lighting Reset to Auto
+  alias: (OLD) Monkey Lighting Reset to Auto
   description: Resets the control mode of the Monkey Light to Auto after manual input.
   triggers:
   - trigger: state
@@ -1654,7 +1629,7 @@
     data: {}
   mode: single
 - id: '1786040923066'
-  alias: Jungle Sink Lighting Reset to Auto
+  alias: (OLD) Jungle Sink Lighting Reset to Auto
   description: Resets the control mode of the Jungle Sink Light to Auto after manual
     input.
   triggers:
@@ -1714,7 +1689,7 @@
     data: {}
   mode: single
 - id: '1786041383309'
-  alias: Toilet Ceiling Lighting Reset to Auto
+  alias: (OLD) Toilet Ceiling Lighting Reset to Auto
   description: Resets the control mode of the Toilet Ceiling Light to Auto after manual
     input.
   triggers:
@@ -1775,7 +1750,7 @@
     data: {}
   mode: single
 - id: '1786041440281'
-  alias: Toilet Sink Lighting Reset to Auto
+  alias: (OLD) Toilet Sink Lighting Reset to Auto
   description: Resets the control mode of the Toilet Sink Light to Auto after manual
     input.
   triggers:
@@ -1835,7 +1810,7 @@
     data: {}
   mode: single
 - id: '1786041614962'
-  alias: X Room Lighting Reset to Auto
+  alias: (OLD) X Room Lighting Reset to Auto
   description: Resets the control mode of the X Room Light to Auto after manual input.
   triggers:
   - trigger: state
@@ -1900,11 +1875,17 @@
   use_blueprint:
     path: custom/vibe_motion_lighting.yaml
     input:
-      no_motion_timeout: 1
+      no_motion_timeout:
+        hours: 0
+        minutes: 0
+        seconds: 0
       lighting_mode_helper: input_select.monkey_lighting_mode
-      motion_sensor: binary_sensor.jungle_presence
+      motion_sensor:
+      - binary_sensor.jungle_presence
       target_light: light.monkey_light
       tod_helper: input_select.time_of_day_mode
+      trigger_on_vibe_change: true
+      trigger_on_maintenance: true
 - id: '1786131016658'
   alias: Hallway Lights Automation
   description: Controls the lights in the hallway based on a motion sensor.
@@ -1912,10 +1893,16 @@
     path: custom/vibe_motion_lighting.yaml
     input:
       lighting_mode_helper: input_select.hallway_lighting_mode
-      motion_sensor: binary_sensor.hallway_occupancy
+      motion_sensor:
+      - binary_sensor.hallway_occupancy
       target_light: light.hallway_lights
       tod_helper: input_select.time_of_day_mode
-      no_motion_timeout: 1
+      no_motion_timeout:
+        hours: 0
+        minutes: 0
+        seconds: 0
+      trigger_on_vibe_change: true
+      trigger_on_maintenance: true
 - id: '1786132256262'
   alias: Jungle Ceiling Light Automation
   description: Controls the ceiling light in the bathroom based on a presense sensor.
@@ -1923,9 +1910,16 @@
     path: custom/vibe_motion_lighting.yaml
     input:
       lighting_mode_helper: input_select.jungle_ceiling_lighting_mode
-      motion_sensor: binary_sensor.jungle_presence
+      motion_sensor:
+      - binary_sensor.jungle_presence
       target_light: light.jungle_ceiling_light
       tod_helper: input_select.time_of_day_mode
+      no_motion_timeout:
+        hours: 0
+        minutes: 0
+        seconds: 0
+      trigger_on_vibe_change: true
+      trigger_on_maintenance: true
 - id: '1786132326940'
   alias: Jungle Sink Light Automation
   description: Controls the sink light in the bathroom based on a presense area sensor.
@@ -1933,10 +1927,13 @@
     path: custom/vibe_motion_lighting.yaml
     input:
       lighting_mode_helper: input_select.jungle_sink_lighting_mode
-      motion_sensor: binary_sensor.jungle_sink_presence
+      motion_sensor:
+      - binary_sensor.jungle_sink_presence
       target_light: light.jungle_sink_light
       tod_helper: input_select.time_of_day_mode
       no_motion_timeout: 2
+      trigger_on_vibe_change: true
+      trigger_on_maintenance: true
 - id: '1786132410261'
   alias: Toilet Ceiling Light Automation
   description: Controls toilet lighting based on time of day, triggered by vibration
@@ -1945,10 +1942,16 @@
     path: custom/vibe_motion_lighting.yaml
     input:
       lighting_mode_helper: input_select.toilet_ceiling_lighting_mode
-      motion_sensor: input_boolean.toilet_occupancy
+      motion_sensor:
+      - input_boolean.toilet_occupancy
       target_light: light.toilet_ceiling_light
       tod_helper: input_select.time_of_day_mode
-      no_motion_timeout: 900
+      no_motion_timeout:
+        hours: 0
+        minutes: 15
+        seconds: 0
+      trigger_on_vibe_change: true
+      trigger_on_maintenance: true
 - id: '1786132455539'
   alias: Toilet Sink Light Automation
   description: Controls toilet lighting based on time of day, triggered by vibration
@@ -1957,10 +1960,16 @@
     path: custom/vibe_motion_lighting.yaml
     input:
       lighting_mode_helper: input_select.toilet_sink_lighting_mode
-      motion_sensor: input_boolean.toilet_occupancy
+      motion_sensor:
+      - input_boolean.toilet_occupancy
       target_light: light.toilet_sink_light
       tod_helper: input_select.time_of_day_mode
-      no_motion_timeout: 900
+      no_motion_timeout:
+        hours: 0
+        minutes: 15
+        seconds: 0
+      trigger_on_vibe_change: true
+      trigger_on_maintenance: true
 - id: '1786134612900'
   alias: Toilet Occupancy Helper
   description: Combines two sensors into one helper boolean to keep track of toilet
@@ -1968,8 +1977,9 @@
   triggers:
   - trigger: mqtt
     options:
-      payload: movement
       topic: zigbee2mqtt/Vibration Sensor
+      value_template: '{{ value_json.action }}'
+      payload: movement
   - trigger: occupancy.detected
     target:
       entity_id: binary_sensor.toilet_motion_sensor_occupancy
@@ -2001,3 +2011,210 @@
         entity_id: input_boolean.toilet_occupancy
       data: {}
   mode: single
+- id: '1786177668996'
+  alias: Hallway Lights Reset to Auto
+  description: Resets the Lighting Mode helper of Hallway Lights to Auto after manual
+    input (Timer expiry or Morning), unless Vibe Mode is Maintenance (then sets non-expiring
+    Manual instead).
+  use_blueprint:
+    path: custom/lighting_mode_reset_to_auto.yaml
+    input:
+      lighting_mode_helper: input_select.hallway_lighting_mode
+      light_entity: light.hallway_lights
+      automation_entity: automation.hallway_lights_automation
+- id: '1786177800211'
+  alias: Jungle Ceiling Light Reset to Auto
+  description: Resets the Lighting Mode helper of Jungle Ceiling Light to Auto after
+    manual input (Timer expiry or Morning), unless Vibe Mode is Maintenance (then
+    sets non-expiring Manual instead).
+  use_blueprint:
+    path: custom/lighting_mode_reset_to_auto.yaml
+    input:
+      lighting_mode_helper: input_select.jungle_ceiling_lighting_mode
+      light_entity: light.jungle_ceiling_light
+      automation_entity: automation.jungle_ceiling_light_automation
+- id: '1786177843801'
+  alias: Monkey Light Reset to Auto
+  description: Resets the Lighting Mode helper of Monkey Light to Auto after manual
+    input (Timer expiry or Morning), unless Vibe Mode is Maintenance (then sets non-expiring
+    Manual instead).
+  use_blueprint:
+    path: custom/lighting_mode_reset_to_auto.yaml
+    input:
+      lighting_mode_helper: input_select.monkey_lighting_mode
+      light_entity: light.monkey_light
+      automation_entity: automation.monkey_light_automation
+- id: '1786177878847'
+  alias: Jungle Sink Light Reset to Auto
+  description: Resets the Lighting Mode helper of Jungle Sink Light to Auto after
+    manual input (Timer expiry or Morning), unless Vibe Mode is Maintenance (then
+    sets non-expiring Manual instead).
+  use_blueprint:
+    path: custom/lighting_mode_reset_to_auto.yaml
+    input:
+      lighting_mode_helper: input_select.jungle_sink_lighting_mode
+      light_entity: light.jungle_sink_light
+      automation_entity: automation.jungle_sink_light_automation
+- id: '1786177913707'
+  alias: Toilet Ceiling Light Reset to Auto
+  description: Resets the Lighting Mode helper of Toilet Ceiling Light to Auto after
+    manual input (Timer expiry or Morning), unless Vibe Mode is Maintenance (then
+    sets non-expiring Manual instead).
+  use_blueprint:
+    path: custom/lighting_mode_reset_to_auto.yaml
+    input:
+      lighting_mode_helper: input_select.toilet_ceiling_lighting_mode
+      light_entity: light.toilet_ceiling_light
+      automation_entity: automation.toilet_ceiling_light_automation
+- id: '1786177946384'
+  alias: Toilet Sink Light Reset to Auto
+  description: Resets the Lighting Mode helper of Toilet Sink Light to Auto after
+    manual input (Timer expiry or Morning), unless Vibe Mode is Maintenance (then
+    sets non-expiring Manual instead).
+  use_blueprint:
+    path: custom/lighting_mode_reset_to_auto.yaml
+    input:
+      lighting_mode_helper: input_select.toilet_sink_lighting_mode
+      light_entity: light.toilet_sink_light
+      automation_entity: automation.toilet_sink_light_automation
+- id: '1786178115933'
+  alias: X Light Automation
+  description: Triggers X Light based on motion, querying the Vibe script for parameters,
+    and turns it off when clear.
+  use_blueprint:
+    path: custom/vibe_motion_lighting.yaml
+    input:
+      lighting_mode_helper: input_select.x_lighting_mode
+      target_light: light.x_light
+      tod_helper: input_select.time_of_day_mode
+      no_motion_timeout:
+        hours: 0
+        minutes: 30
+        seconds: 0
+      motion_sensor:
+      - binary_sensor.x_room_occupancy
+- id: '1786178150550'
+  alias: X Light Reset to Auto
+  description: Resets the Lighting Mode helper of X Light to Auto after manual input
+    (Timer expiry or Morning), unless Vibe Mode is Maintenance (then sets non-expiring
+    Manual instead).
+  use_blueprint:
+    path: custom/lighting_mode_reset_to_auto.yaml
+    input:
+      lighting_mode_helper: input_select.x_lighting_mode
+      light_entity: light.x_light
+      automation_entity: automation.x_light_automation
+- id: '1786179502120'
+  alias: Maintenance Mode State Transitions
+  description: Applies all changes that should happen when Vibe Mode changes to Maintenance.
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_select.vibe_mode
+    to:
+    - Maintenance
+    id: Start Maintenance
+  - trigger: state
+    entity_id:
+    - input_select.vibe_mode
+    id: Finish Maintenance
+    from:
+    - Maintenance
+  conditions: []
+  actions:
+  - alias: Start or Finish Maintenance
+    choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - Start Maintenance
+      sequence:
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id:
+          - input_select.hallway_lighting_mode
+          - input_select.jungle_ceiling_lighting_mode
+          - input_select.monkey_lighting_mode
+          - input_select.jungle_sink_lighting_mode
+          - input_select.toilet_ceiling_lighting_mode
+          - input_select.toilet_sink_lighting_mode
+        data:
+          option: Infinite
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id: input_boolean.jungle_music
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - Finish Maintenance
+      sequence:
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id:
+          - input_select.hallway_lighting_mode
+          - input_select.jungle_ceiling_lighting_mode
+          - input_select.monkey_lighting_mode
+          - input_select.jungle_sink_lighting_mode
+          - input_select.toilet_ceiling_lighting_mode
+          - input_select.toilet_sink_lighting_mode
+        data:
+          option: Auto
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.jungle_music
+        data: {}
+  mode: single
+- id: '1786183660188'
+  alias: Small Light Automation
+  description: Controls the small light according to Vibe Modes
+  use_blueprint:
+    path: custom/vibe_motion_lighting.yaml
+    input:
+      target_light: light.small_light
+      no_motion_timeout:
+        hours: 0
+        minutes: 0
+        seconds: 0
+      trigger_on_vibe_change: true
+- id: '1786199208134'
+  alias: 'Test: Thunderstorm Lightning Strike (Fast)'
+  triggers: []
+  actions:
+  - repeat:
+      count: '{{ range(min_flashes, max_flashes + 1) | random }}'
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: '{{ target_light }}'
+        data:
+          brightness: 70
+          color_temp_kelvin: '{{ flash_color_temp }}'
+          transition: 0
+      - delay:
+          milliseconds: '{{ range(min_delay_ms, max_delay_ms) | random }}'
+      - action: light.turn_on
+        target:
+          entity_id: '{{ target_light }}'
+        data:
+          brightness: 1
+          transition: 0
+      - delay:
+          milliseconds: '{{ range(min_delay_ms, max_delay_ms) | random }}'
+  - action: light.turn_off
+    target:
+      entity_id: '{{ target_light }}'
+    data:
+      transition: 0
+  mode: single
+  variables:
+    target_light: light.monkey_light
+    flash_color_temp: 3000
+    min_flashes: 3
+    max_flashes: 6
+    min_delay_ms: 40
+    max_delay_ms: 120

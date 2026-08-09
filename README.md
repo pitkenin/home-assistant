@@ -18,7 +18,7 @@ This is the home I've been building since early 2026, one room and one small fix
 
 ### 🌴 Welcome to the Jungle
 
-Walking into the bathroom drops you straight into the Jungle: vines climb the walls, birds perch on the shelves, and a monkey hangs from the ceiling holding a lightbulb that glows warm the moment you step in. A beat later the room fills with sound, spilling out of the ceiling speakers run off a Raspberry Pi through Music Assistant. The same set of speakers carries two overlapping streams — one holding the everyday ambience, the other layering in extra sound once the toilet side of the room fills up too. The soundtrack shifts with the time of day, settling into crickets late at night and bringing the birds back through the day. Stay long enough and, on rare occasions, a little melody sneaks in as a hidden treat. Step up to the mirror to wash your hands and the cabinet light above it switches on by itself, sensing you're right there.
+Walking into the bathroom drops you straight into the Jungle: vines climb the walls, birds perch on the shelves, and a monkey hangs from the ceiling holding a lightbulb that glows warm the moment you step in. A beat later the room fills with sound, spilling out of the ceiling speakers run off a Raspberry Pi through Music Assistant. The soundtrack shifts with the time of day, settling into crickets late at night and bringing the birds back through the day. Stay long enough and, on rare occasions, a little melody sneaks in as a hidden treat. Linger by the toilet and a second layer of sound joins in underneath, so both corners of the room feel alive at once. Step up to the mirror to wash your hands and the cabinet light above it switches on by itself, sensing you're right there.
 
 ![🌴 Welcome to the Jungle](images/welcome-to-the-jungle.jpg)
 
@@ -38,7 +38,7 @@ Two modes sit underneath almost everything else in the house, read by lighting, 
 
 ### 🔧 When something breaks
 
-The bigger this system gets, the less I want to be the one who notices when something's gone wrong. If the Jungle speakers drop off the network, Home Assistant catches it, sends me a notification, and tries rebooting them before reloading the connection itself. As a second line of defense there's a watchdog running directly on the Pi, independent of Home Assistant entirely, that reboots and logs on its own in case the whole thing becomes unreachable. The goal isn't zero failures — with this many moving parts something will eventually hiccup — it's having the house notice and fix itself before I do. Set and forget, as much as a jungle bathroom can be.
+The bigger this system gets, the less I want to be the one who notices when something's gone wrong. If the Jungle speakers drop off the network, Home Assistant catches it, sends me a notification, and tries rebooting them itself. As a second line of defense there's a watchdog running directly on the Pi, independent of Home Assistant entirely, that reboots and logs on its own in case the whole thing becomes unreachable. The goal isn't zero failures — with this many moving parts something will eventually hiccup — it's having the house notice and fix itself before I do. Set and forget, as much as a jungle bathroom can be.
 
 
 <!-- END_AI_SUMMARY -->
