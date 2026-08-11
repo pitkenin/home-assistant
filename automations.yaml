@@ -201,47 +201,47 @@
     alias: Reset User
   mode: single
 - id: '1774196799531'
-  alias: Laundry Button Mapping
-  description: Maps IKEA SOMRIG buttons (2 buttons) to different users of the laundry
-    machine for future notification. Additionally controls bathroom lighting with
-    alternative inputs.
+  alias: Jungle 2-Buttons
+  description: Maps buttons (2 buttons) to different users of the laundry machine
+    for future notification. Additionally controls bathroom sounds with alternative
+    inputs.
   triggers:
   - domain: mqtt
-    device_id: 13fdc0f255838705242ac1a6182c4876
+    device_id: 7f560e17593e674ffc8d2195c1adb9e1
     type: action
-    subtype: 1_short_release
+    subtype: 'on'
     trigger: device
     id: aksu
   - domain: mqtt
-    device_id: 13fdc0f255838705242ac1a6182c4876
+    device_id: 7f560e17593e674ffc8d2195c1adb9e1
     type: action
-    subtype: 2_short_release
+    subtype: 'off'
     trigger: device
     id: seba
   - domain: mqtt
-    device_id: 13fdc0f255838705242ac1a6182c4876
+    device_id: 7f560e17593e674ffc8d2195c1adb9e1
     type: action
-    subtype: 1_double_press
+    subtype: on_double
+    trigger: device
+    id: secondary
+  - domain: mqtt
+    device_id: 7f560e17593e674ffc8d2195c1adb9e1
+    type: action
+    subtype: off_double
+    trigger: device
+    id: secondary
+  - domain: mqtt
+    device_id: 7f560e17593e674ffc8d2195c1adb9e1
+    type: action
+    subtype: brightness_move_up
     trigger: device
     id: reset user
   - domain: mqtt
-    device_id: 13fdc0f255838705242ac1a6182c4876
+    device_id: 7f560e17593e674ffc8d2195c1adb9e1
     type: action
-    subtype: 2_double_press
+    subtype: brightness_move_down
     trigger: device
     id: reset user
-  - domain: mqtt
-    device_id: 13fdc0f255838705242ac1a6182c4876
-    type: action
-    subtype: 1_long_press
-    trigger: device
-    id: 1_long
-  - domain: mqtt
-    device_id: 13fdc0f255838705242ac1a6182c4876
-    type: action
-    subtype: 2_long_press
-    trigger: device
-    id: 2_long
   conditions: []
   actions:
   - choose:
@@ -281,31 +281,12 @@
     - conditions:
       - condition: trigger
         id:
-        - 1_long
-      sequence:
-      - action: light.turn_on
-        metadata: {}
-        target:
-          entity_id:
-          - light.jungle_ceiling_light
-        data:
-          brightness_pct: 100
-    - conditions:
-      - condition: trigger
-        id:
-        - 2_long
-      sequence:
-      - action: light.turn_off
-        metadata: {}
-        target:
-          entity_id:
-          - light.jungle_ceiling_light
-        data: {}
+        - secondary
+      sequence: []
   mode: single
 - id: '1774198810880'
-  alias: Hallway Buttons Mapping
-  description: Maps IKEA SOMRIG buttons (2 buttons) to different actions to control
-    the lights in the hallway.
+  alias: Hallway Light Buttons
+  description: Maps IKEA SOMRIG buttons (2 buttons) to control the lights in the hallway.
   triggers:
   - domain: mqtt
     device_id: 780907972d8aed46970822199d984992
@@ -349,6 +330,28 @@
     - conditions:
       - condition: trigger
         id:
+        - on_single
+      sequence:
+      - action: script.increase_brightness_level
+        metadata: {}
+        data:
+          level: step
+          target: light.hallway_lights
+          automation_entity: automation.hallway_lights_automation
+      - action: script.set_manual_mode_timer
+        metadata: {}
+        data:
+          mode: Timer
+          duration:
+            hours: 2
+            minutes: 0
+            seconds: 0
+          auto_mode_helper: input_boolean.hallway_lights_auto_mode
+          timer_active_helper: input_boolean.hallway_lights_timer_active
+          expiration_helper: input_datetime.hallway_lights_manual_expiration
+    - conditions:
+      - condition: trigger
+        id:
         - off_single
       sequence:
       - action: light.turn_off
@@ -356,12 +359,35 @@
         target:
           entity_id: light.hallway_lights
         data: {}
-      - action: input_select.select_option
+      - action: script.set_manual_mode_timer
         metadata: {}
-        target:
-          entity_id: input_select.hallway_lighting_mode
         data:
-          option: Timer
+          mode: Timer
+          duration:
+            hours: 2
+            minutes: 0
+            seconds: 0
+          auto_mode_helper: input_boolean.hallway_lights_auto_mode
+          timer_active_helper: input_boolean.hallway_lights_timer_active
+          expiration_helper: input_datetime.hallway_lights_manual_expiration
+    - conditions:
+      - condition: trigger
+        id:
+        - on_double
+      sequence:
+      - action: script.increase_brightness_level
+        metadata: {}
+        data:
+          level: max
+          target: light.hallway_lights
+      - action: script.set_manual_mode_timer
+        metadata: {}
+        data:
+          mode: Time
+          auto_mode_helper: input_boolean.hallway_lights_auto_mode
+          timer_active_helper: input_boolean.hallway_lights_timer_active
+          expiration_helper: input_datetime.hallway_lights_manual_expiration
+          time: 07:00:00
     - conditions:
       - condition: trigger
         id:
@@ -372,76 +398,26 @@
         target:
           entity_id: light.hallway_lights
         data: {}
-      - action: input_select.select_option
+      - action: script.set_manual_mode_timer
         metadata: {}
-        target:
-          entity_id: input_select.hallway_lighting_mode
         data:
-          option: Morning
+          mode: Time
+          auto_mode_helper: input_boolean.hallway_lights_auto_mode
+          timer_active_helper: input_boolean.hallway_lights_timer_active
+          expiration_helper: input_datetime.hallway_lights_manual_expiration
+          time: 07:00:00
     - conditions:
       - condition: trigger
         id:
-        - on_single
+        - off_long
+        - on_long
       sequence:
-      - if:
-        - condition: not
-          conditions:
-          - condition: state
-            entity_id: input_select.hallway_lighting_mode
-            state:
-            - Auto
-        then:
-        - action: light.turn_off
-          metadata: {}
-          target:
-            entity_id: light.hallway_lights
-          data: {}
-        - delay:
-            hours: 0
-            minutes: 0
-            seconds: 0
-            milliseconds: 100
-      - action: light.turn_on
+      - action: automation.trigger
         metadata: {}
         target:
-          entity_id: light.hallway_lights
-        data: {}
-      - action: input_select.select_option
-        metadata: {}
-        target:
-          entity_id: input_select.hallway_lighting_mode
+          entity_id: automation.hallway_lights_reset_to_auto
         data:
-          option: Auto
-    - conditions:
-      - condition: trigger
-        id:
-        - on_double
-      sequence:
-      - action: light.turn_on
-        metadata: {}
-        target:
-          entity_id: light.hallway_lights
-        data:
-          color_temp_kelvin: 6440
-          brightness_pct: 100
-      - delay:
-          hours: 0
-          minutes: 0
-          seconds: 0
-          milliseconds: 100
-      - action: light.turn_on
-        metadata: {}
-        target:
-          entity_id: light.hallway_lights
-        data:
-          color_temp_kelvin: 6440
-          brightness_pct: 100
-      - action: input_select.select_option
-        metadata: {}
-        target:
-          entity_id: input_select.hallway_lighting_mode
-        data:
-          option: Timer
+          skip_condition: true
   mode: restart
 - id: '1774199438030'
   alias: (OLD) Hallway Lighting Reset to Auto Mode
@@ -851,10 +827,9 @@
   mode: restart
   max_exceeded: silent
 - id: '1774297821481'
-  alias: X Light Buttons
-  description: Maps IKEA SOMRIG buttons (2 buttons) to different actions to control
-    the lights in the room. An alternative input is made for saving a replay video
-    of computer screen when streaming to the living room TV.
+  alias: Living Room 2-Buttons
+  description: 'Maps buttons (2 buttons) to custom actions, for example: saving a
+    replay video of computer screen when streaming to the living room TV.'
   triggers:
   - domain: mqtt
     device_id: 084c8efe4b677ba2ff34e66a271c3a1a
@@ -898,119 +873,43 @@
     - conditions:
       - condition: trigger
         id:
-        - off_single
-      sequence:
-      - action: light.turn_off
-        metadata: {}
-        target:
-          entity_id:
-          - light.x_light
-        data: {}
-      - action: input_select.select_option
-        metadata: {}
-        target:
-          entity_id:
-          - input_select.x_lighting_mode
-        data:
-          option: Timer
-    - conditions:
-      - condition: trigger
-        id:
-        - off_double
-      sequence:
-      - action: light.turn_off
-        metadata: {}
-        target:
-          entity_id:
-          - light.x_light
-        data: {}
-      - action: input_select.select_option
-        metadata: {}
-        target:
-          entity_id:
-          - input_select.x_lighting_mode
-        data:
-          option: Morning
-    - conditions:
-      - condition: trigger
-        id:
         - on_single
-      sequence:
-      - if:
-        - condition: not
-          conditions:
-          - condition: state
-            entity_id: input_select.x_lighting_mode
-            state:
-            - Auto
-        then:
-        - action: light.turn_off
-          metadata: {}
-          target:
-            entity_id: light.x_light
-          data: {}
-        - delay:
-            hours: 0
-            minutes: 0
-            seconds: 0
-            milliseconds: 100
-      - action: light.turn_on
-        metadata: {}
-        target:
-          entity_id:
-          - light.x_light
-        data: {}
-      - action: input_select.select_option
-        metadata: {}
-        target:
-          entity_id:
-          - input_select.x_lighting_mode
-        data:
-          option: Auto
-    - conditions:
-      - condition: trigger
-        id:
-        - on_double
-      sequence:
-      - action: light.turn_on
-        metadata: {}
-        target:
-          entity_id:
-          - light.x_light
-        data:
-          color_temp_kelvin: 6500
-          brightness_pct: 100
-      - delay:
-          hours: 0
-          minutes: 0
-          seconds: 0
-          milliseconds: 100
-      - action: light.turn_on
-        metadata: {}
-        target:
-          entity_id:
-          - light.x_light
-        data:
-          color_temp_kelvin: 6500
-          brightness_pct: 100
-      - action: input_select.select_option
-        metadata: {}
-        target:
-          entity_id:
-          - input_select.x_lighting_mode
-        data:
-          option: Timer
-    - conditions:
-      - condition: trigger
-        id:
-        - off_long
-        - on_long
       sequence:
       - action: button.press
         metadata: {}
         target:
           entity_id: button.xpc_obs_save_replay
         data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - off_single
+      sequence:
+      - action: button.press
+        metadata: {}
+        target:
+          entity_id: button.xpc_obs_save_replay
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - on_double
+      sequence: []
+    - conditions:
+      - condition: trigger
+        id:
+        - off_double
+      sequence: []
+    - conditions:
+      - condition: trigger
+        id:
+        - on_long
+      sequence: []
+    - conditions:
+      - condition: trigger
+        id:
+        - off_long
+      sequence: []
   mode: restart
 - id: '1775415056062'
   alias: Printer Ink Alert System
@@ -1182,60 +1081,225 @@
   triggers:
   - trigger: homeassistant
     event: start
-  conditions:
-  - condition: state
-    entity_id: binary_sensor.jungle_presence
-    state:
-    - 'off'
-  - condition: not
-    conditions:
-    - condition: state
-      entity_id: media_player.janitor_primary
-      state:
-      - unavailable
+  conditions: []
   actions:
-  - action: media_player.volume_set
-    target:
-      entity_id: media_player.janitor_primary
-    data:
-      volume_level: 0
-  - action: input_boolean.turn_off
-    metadata: {}
-    target:
-      entity_id: input_boolean.jungle_easter_egg_played
-    data: {}
+  - if:
+    - condition: state
+      entity_id: binary_sensor.jungle_presence
+      state:
+      - 'off'
+    - condition: not
+      conditions:
+      - condition: state
+        entity_id: media_player.janitor_primary
+        state:
+        - unavailable
+    then:
+    - action: media_player.volume_set
+      target:
+        entity_id: media_player.janitor_primary
+      data:
+        volume_level: 0
+    - action: input_boolean.turn_off
+      metadata: {}
+      target:
+        entity_id: input_boolean.jungle_easter_egg_played
+      data: {}
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.hallway_lights_timer_active
+        state:
+        - 'on'
+      - condition: time
+        after: input_datetime.hallway_lights_manual_expiration
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id:
+          - input_boolean.hallway_lights_timer_active
+        data: {}
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.hallway_lights_auto_mode
+        data: {}
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.kitchen_light_timer_active
+        state:
+        - 'on'
+      - condition: time
+        after: input_datetime.kitchen_light_manual_expiration
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id:
+          - input_boolean.kitchen_light_timer_active
+        data: {}
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.kitchen_lights_auto_mode
+        data: {}
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.monkey_light_timer_active
+        state:
+        - 'on'
+      - condition: time
+        after: input_datetime.monkey_light_manual_expiration
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id:
+          - input_boolean.monkey_light_timer_active
+        data: {}
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.monkey_light_auto_mode
+        data: {}
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.seb_lights_timer_active
+        state:
+        - 'on'
+      - condition: time
+        after: input_datetime.seb_lights_manual_expiration
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id:
+          - input_boolean.seb_lights_timer_active
+        data: {}
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.seb_lights_auto_mode
+        data: {}
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.x_light_timer_active
+        state:
+        - 'on'
+      - condition: time
+        after: input_datetime.x_light_manual_expiration
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id:
+          - input_boolean.x_light_timer_active
+        data: {}
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.x_light_auto_mode
+        data: {}
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.jungle_ceiling_light_timer_active
+        state:
+        - 'on'
+      - condition: time
+        after: input_datetime.jungle_ceiling_light_manual_expiration
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id:
+          - input_boolean.jungle_ceiling_light_timer_active
+        data: {}
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.jungle_ceiling_light_auto_mode
+        data: {}
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.jungle_sink_light_timer_active
+        state:
+        - 'on'
+      - condition: time
+        after: input_datetime.jungle_sink_light_manual_expiration
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id: input_boolean.jungle_sink_light_timer_active
+        data: {}
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.jungle_sink_light_auto_mode
+        data: {}
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.toilet_ceiling_light_timer_active
+        state:
+        - 'on'
+      - condition: time
+        after: input_datetime.toilet_ceiling_light_manual_expiration
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id: input_boolean.toilet_ceiling_light_timer_active
+        data: {}
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.toilet_ceiling_light_auto_mode
+        data: {}
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.toilet_sink_light_timer_active
+        state:
+        - 'on'
+      - condition: time
+        after: input_datetime.toilet_sink_light_manual_expiration
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id: input_boolean.toilet_sink_light_timer_active
+        data: {}
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.toilet_sink_light_auto_mode
+        data: {}
 - id: '1782341081247'
   alias: Jungle Sound
   description: Controls primary and secondary audiostream based on bathroom presence
-    and time of day. Creates a jungle-themed ambience in the bathroom with a few eastereggs.
+    and time of day.
   triggers:
   - trigger: state
     entity_id:
     - binary_sensor.jungle_presence
-    to:
-    - 'on'
+    to: 'on'
     id: room_entered
   - trigger: state
     entity_id:
     - binary_sensor.jungle_presence
-    to:
-    - 'off'
-    id: room_left
+    to: 'off'
     for:
-      hours: 0
-      minutes: 0
       seconds: 2
+    id: room_left
   - trigger: state
     entity_id:
     - binary_sensor.jungle_toilet_presence
-    to:
-    - 'on'
+    to: 'on'
     id: toilet_occupied
   - trigger: state
     entity_id:
     - binary_sensor.jungle_toilet_presence
-    to:
-    - 'off'
+    to: 'off'
     id: toilet_vacant
   - trigger: state
     entity_id: input_select.time_of_day_mode
@@ -1243,58 +1307,47 @@
   conditions:
   - condition: state
     entity_id: input_boolean.jungle_music
-    state:
-    - 'on'
+    state: 'on'
   actions:
   - variables:
-      vibe_mode: '{{ states(''input_select.vibe_mode'') }}'
       ambient_id: '{% set mode = states(''input_select.time_of_day_mode'') %} {% if
         mode == ''Morning'' %} Jungle Morning {% elif mode == ''Day'' %} Jungle Day
         {% else %} Jungle Night {% endif %}
 
         '
-      vibe_settings:
-        Normal:
-          target: 0.45
-          track_2: 0.4
-        Movie:
-          target: 0.35
-          track_2: 0.3
-        Cozy Nook:
-          target: 0.35
-          track_2: 0.3
-        Sauna:
-          target: 0.45
-          track_2: 0.4
-        Party:
-          target: 0.5
-          track_2: 0.45
-        Maintenance:
-          target: 0
-          track_2: 0
-        Board Games:
-          target: 0.45
-          track_2: 0.4
-      settings: '{{ vibe_settings.get(vibe_mode, {''target'': 0.5, ''track_2'': 0.4})
-        }}'
-      target_vol: '{{ settings.target | float }}'
-      track_2_vol: '{{ settings.track_2 | float }}'
-      track_1_vol: "{% if track_2_vol >= target_vol %}\n  0.0\n{% else %}\n  {{ ((target_vol
-        ** 2 - track_2_vol ** 2) ** 0.5) | round(2) }}\n{% endif %}\n"
   - choose:
     - conditions:
       - condition: trigger
         id:
         - room_entered
-        - time_changed
       sequence:
-      - action: script.jungle_audio_request
-        metadata: {}
+      - action: script.jungle_audio_controller
         data:
-          forceplay: true
+          action: play
           category: ambient
           sound_id: '{{ ambient_id }}'
-          volume: '{{ target_vol }}'
+    - conditions:
+      - condition: trigger
+        id:
+        - time_changed
+      sequence:
+      - if:
+        - condition: state
+          entity_id: binary_sensor.jungle_presence
+          state: 'on'
+        then:
+        - action: script.jungle_audio_controller
+          data:
+            action: play
+            category: ambient
+            sound_id: '{{ ambient_id }}'
+        else:
+        - action: script.jungle_audio_controller
+          data:
+            action: play
+            category: ambient
+            sound_id: '{{ ambient_id }}'
+            volume_ratio: 0
     - conditions:
       - condition: trigger
         id: toilet_occupied
@@ -1302,20 +1355,12 @@
         entity_id: input_boolean.jungle_easter_egg_played
         state: 'off'
       sequence:
-      - parallel:
-        - action: script.jungle_audio_request
-          metadata: {}
-          data:
-            category: easter_egg
-            sound_id: Terraria Jungle
-            volume: '{{ track_2_vol }}'
-        - action: script.universal_volume_fade
-          metadata: {}
-          data:
-            duration_seconds: 5
-            steps: 50
-            target_player: media_player.janitor_primary
-            target_volume: '{{ track_1_vol }}'
+      - action: script.jungle_audio_controller
+        data:
+          action: play
+          category: easter_egg
+          sound_id: Terraria Jungle
+          volume_ratio: 0.5
       - action: input_boolean.turn_on
         target:
           entity_id: input_boolean.jungle_easter_egg_played
@@ -1323,47 +1368,21 @@
       - condition: trigger
         id: toilet_vacant
       sequence:
-      - parallel:
-        - action: script.jungle_audio_pause
-          metadata: {}
-          data:
-            category: easter_egg
-        - if:
-          - condition: state
-            entity_id: binary_sensor.jungle_presence
-            state:
-            - 'on'
-          then:
-          - action: script.universal_volume_fade
-            metadata: {}
-            data:
-              duration_seconds: 5
-              steps: 50
-              target_player: media_player.janitor_primary
-              target_volume: '{{ target_vol }}'
-          - action: script.jungle_audio_request
-            metadata: {}
-            data:
-              category: ambient
-              volume: '{{ target_vol }}'
-              sound_id: '"{{ ambient_id }}"'
-          else:
-          - action: script.jungle_audio_pause
-            metadata: {}
-            data:
-              category: ambient
+      - action: script.jungle_audio_controller
+        data:
+          action: stop
+          category: easter_egg
     - conditions:
       - condition: trigger
         id: room_left
       sequence:
-      - action: script.jungle_audio_pause
-        metadata: {}
-        data:
-          category: ambient
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.jungle_easter_egg_played
-        data: {}
+      - action: script.jungle_audio_controller
+        data:
+          action: stop
+          category: ambient
   mode: queued
   max: 5
 - id: '1784909281271'
@@ -1441,6 +1460,7 @@
   - trigger: template
     value_template: '{{ states(''input_text.car_bt_mac'') in (state_attr(''sensor.x_phone_bluetooth_connection'',
       ''connected_paired_devices'') | string) }}'
+    enabled: false
   conditions:
   - condition: todo.incomplete
     target:
@@ -1879,7 +1899,6 @@
         hours: 0
         minutes: 0
         seconds: 0
-      lighting_mode_helper: input_select.monkey_lighting_mode
       motion_sensor:
       - binary_sensor.jungle_presence
       target_light: light.monkey_light
@@ -1909,7 +1928,6 @@
   use_blueprint:
     path: custom/vibe_motion_lighting.yaml
     input:
-      lighting_mode_helper: input_select.jungle_ceiling_lighting_mode
       motion_sensor:
       - binary_sensor.jungle_presence
       target_light: light.jungle_ceiling_light
@@ -1926,7 +1944,6 @@
   use_blueprint:
     path: custom/vibe_motion_lighting.yaml
     input:
-      lighting_mode_helper: input_select.jungle_sink_lighting_mode
       motion_sensor:
       - binary_sensor.jungle_sink_presence
       target_light: light.jungle_sink_light
@@ -1941,7 +1958,6 @@
   use_blueprint:
     path: custom/vibe_motion_lighting.yaml
     input:
-      lighting_mode_helper: input_select.toilet_ceiling_lighting_mode
       motion_sensor:
       - input_boolean.toilet_occupancy
       target_light: light.toilet_ceiling_light
@@ -1952,6 +1968,7 @@
         seconds: 0
       trigger_on_vibe_change: true
       trigger_on_maintenance: true
+      auto_mode_helper: input_boolean.toilet_ceiling_light_auto_mode
 - id: '1786132455539'
   alias: Toilet Sink Light Automation
   description: Controls toilet lighting based on time of day, triggered by vibration
@@ -1959,7 +1976,6 @@
   use_blueprint:
     path: custom/vibe_motion_lighting.yaml
     input:
-      lighting_mode_helper: input_select.toilet_sink_lighting_mode
       motion_sensor:
       - input_boolean.toilet_occupancy
       target_light: light.toilet_sink_light
@@ -1970,6 +1986,7 @@
         seconds: 0
       trigger_on_vibe_change: true
       trigger_on_maintenance: true
+      auto_mode_helper: input_boolean.toilet_sink_light_auto_mode
 - id: '1786134612900'
   alias: Toilet Occupancy Helper
   description: Combines two sensors into one helper boolean to keep track of toilet
@@ -2019,9 +2036,11 @@
   use_blueprint:
     path: custom/lighting_mode_reset_to_auto.yaml
     input:
-      lighting_mode_helper: input_select.hallway_lighting_mode
       light_entity: light.hallway_lights
       automation_entity: automation.hallway_lights_automation
+      auto_mode_helper: input_boolean.hallway_lights_auto_mode
+      expiration_helper: input_datetime.hallway_lights_manual_expiration
+      timer_active_helper: input_boolean.hallway_lights_timer_active
 - id: '1786177800211'
   alias: Jungle Ceiling Light Reset to Auto
   description: Resets the Lighting Mode helper of Jungle Ceiling Light to Auto after
@@ -2030,9 +2049,11 @@
   use_blueprint:
     path: custom/lighting_mode_reset_to_auto.yaml
     input:
-      lighting_mode_helper: input_select.jungle_ceiling_lighting_mode
       light_entity: light.jungle_ceiling_light
       automation_entity: automation.jungle_ceiling_light_automation
+      auto_mode_helper: input_boolean.jungle_ceiling_light_auto_mode
+      expiration_helper: input_datetime.jungle_ceiling_light_manual_expiration
+      timer_active_helper: input_boolean.jungle_ceiling_light_timer_active
 - id: '1786177843801'
   alias: Monkey Light Reset to Auto
   description: Resets the Lighting Mode helper of Monkey Light to Auto after manual
@@ -2041,9 +2062,11 @@
   use_blueprint:
     path: custom/lighting_mode_reset_to_auto.yaml
     input:
-      lighting_mode_helper: input_select.monkey_lighting_mode
       light_entity: light.monkey_light
       automation_entity: automation.monkey_light_automation
+      auto_mode_helper: input_boolean.monkey_light_auto_mode
+      expiration_helper: input_datetime.monkey_light_manual_expiration
+      timer_active_helper: input_boolean.monkey_light_timer_active
 - id: '1786177878847'
   alias: Jungle Sink Light Reset to Auto
   description: Resets the Lighting Mode helper of Jungle Sink Light to Auto after
@@ -2052,9 +2075,11 @@
   use_blueprint:
     path: custom/lighting_mode_reset_to_auto.yaml
     input:
-      lighting_mode_helper: input_select.jungle_sink_lighting_mode
       light_entity: light.jungle_sink_light
       automation_entity: automation.jungle_sink_light_automation
+      auto_mode_helper: input_boolean.jungle_sink_light_auto_mode
+      expiration_helper: input_datetime.jungle_sink_light_manual_expiration
+      timer_active_helper: input_boolean.jungle_sink_light_timer_active
 - id: '1786177913707'
   alias: Toilet Ceiling Light Reset to Auto
   description: Resets the Lighting Mode helper of Toilet Ceiling Light to Auto after
@@ -2063,9 +2088,11 @@
   use_blueprint:
     path: custom/lighting_mode_reset_to_auto.yaml
     input:
-      lighting_mode_helper: input_select.toilet_ceiling_lighting_mode
       light_entity: light.toilet_ceiling_light
       automation_entity: automation.toilet_ceiling_light_automation
+      auto_mode_helper: input_boolean.toilet_ceiling_light_auto_mode
+      expiration_helper: input_datetime.toilet_ceiling_light_manual_expiration
+      timer_active_helper: input_boolean.toilet_ceiling_light_timer_active
 - id: '1786177946384'
   alias: Toilet Sink Light Reset to Auto
   description: Resets the Lighting Mode helper of Toilet Sink Light to Auto after
@@ -2074,9 +2101,11 @@
   use_blueprint:
     path: custom/lighting_mode_reset_to_auto.yaml
     input:
-      lighting_mode_helper: input_select.toilet_sink_lighting_mode
       light_entity: light.toilet_sink_light
       automation_entity: automation.toilet_sink_light_automation
+      auto_mode_helper: input_boolean.toilet_sink_light_auto_mode
+      expiration_helper: input_datetime.toilet_sink_light_manual_expiration
+      timer_active_helper: input_boolean.toilet_sink_light_timer_active
 - id: '1786178115933'
   alias: X Light Automation
   description: Triggers X Light based on motion, querying the Vibe script for parameters,
@@ -2084,15 +2113,14 @@
   use_blueprint:
     path: custom/vibe_motion_lighting.yaml
     input:
-      lighting_mode_helper: input_select.x_lighting_mode
       target_light: light.x_light
       tod_helper: input_select.time_of_day_mode
       no_motion_timeout:
         hours: 0
         minutes: 30
         seconds: 0
-      motion_sensor:
-      - binary_sensor.x_room_occupancy
+      motion_sensor: []
+      auto_mode_helper: input_boolean.x_light_auto_mode
 - id: '1786178150550'
   alias: X Light Reset to Auto
   description: Resets the Lighting Mode helper of X Light to Auto after manual input
@@ -2101,12 +2129,14 @@
   use_blueprint:
     path: custom/lighting_mode_reset_to_auto.yaml
     input:
-      lighting_mode_helper: input_select.x_lighting_mode
       light_entity: light.x_light
       automation_entity: automation.x_light_automation
+      auto_mode_helper: input_boolean.x_light_auto_mode
+      expiration_helper: input_datetime.x_light_manual_expiration
+      timer_active_helper: input_boolean.x_light_timer_active
 - id: '1786179502120'
-  alias: Maintenance Mode State Transitions
-  description: Applies all changes that should happen when Vibe Mode changes to Maintenance.
+  alias: Vibe Mode State Transitions
+  description: Applies all changes that should happen when Vibe Mode changes.
   triggers:
   - trigger: state
     entity_id:
@@ -2120,8 +2150,24 @@
     id: Finish Maintenance
     from:
     - Maintenance
+  - trigger: state
+    entity_id: input_select.vibe_mode
   conditions: []
   actions:
+  - variables:
+      vibe_targets:
+        Normal: 0.45
+        Movie: 0.35
+        Cozy Nook: 0.35
+        Sauna: 0.45
+        Party: 0.5
+        Maintenance: 0
+        Board Games: 0.45
+  - action: input_number.set_value
+    target:
+      entity_id: input_number.jungle_target_volume
+    data:
+      value: '{{ vibe_targets.get(trigger.to_state.state, 0.5) }}'
   - alias: Start or Finish Maintenance
     choose:
     - conditions:
@@ -2129,45 +2175,105 @@
         id:
         - Start Maintenance
       sequence:
-      - action: input_select.select_option
-        metadata: {}
-        target:
-          entity_id:
-          - input_select.hallway_lighting_mode
-          - input_select.jungle_ceiling_lighting_mode
-          - input_select.monkey_lighting_mode
-          - input_select.jungle_sink_lighting_mode
-          - input_select.toilet_ceiling_lighting_mode
-          - input_select.toilet_sink_lighting_mode
-        data:
-          option: Infinite
       - action: input_boolean.turn_off
         metadata: {}
         target:
-          entity_id: input_boolean.jungle_music
+          entity_id:
+          - input_boolean.jungle_music
+          - input_boolean.hallway_lights_auto_mode
+          - input_boolean.kitchen_lights_auto_mode
+          - input_boolean.monkey_light_auto_mode
+          - input_boolean.jungle_ceiling_light_auto_mode
+          - input_boolean.jungle_sink_light_auto_mode
+          - input_boolean.toilet_ceiling_light_auto_mode
+          - input_boolean.toilet_sink_light_auto_mode
         data: {}
+      - action: script.set_manual_mode_timer
+        metadata: {}
+        data:
+          mode: Infinite
+          force: false
+          auto_mode_helper: input_boolean.hallway_lights_auto_mode
+          timer_active_helper: input_boolean.hallway_lights_timer_active
+          expiration_helper: input_datetime.hallway_lights_manual_expiration
+      - action: script.set_manual_mode_timer
+        metadata: {}
+        data:
+          mode: Infinite
+          force: false
+          auto_mode_helper: input_boolean.jungle_ceiling_light_auto_mode
+          timer_active_helper: input_boolean.jungle_ceiling_light_timer_active
+          expiration_helper: input_datetime.jungle_ceiling_light_manual_expiration
+      - action: script.set_manual_mode_timer
+        metadata: {}
+        data:
+          mode: Infinite
+          force: false
+          auto_mode_helper: input_boolean.jungle_sink_light_auto_mode
+          timer_active_helper: input_boolean.jungle_sink_light_timer_active
+          expiration_helper: input_datetime.jungle_sink_light_manual_expiration
+      - action: script.set_manual_mode_timer
+        metadata: {}
+        data:
+          mode: Infinite
+          force: false
+          auto_mode_helper: input_boolean.kitchen_light_timer_active
+          timer_active_helper: input_boolean.kitchen_light_timer_active
+          expiration_helper: input_datetime.kitchen_light_manual_expiration
+      - action: script.set_manual_mode_timer
+        metadata: {}
+        data:
+          mode: Infinite
+          force: false
+          auto_mode_helper: input_boolean.monkey_light_auto_mode
+          timer_active_helper: input_boolean.monkey_light_timer_active
+          expiration_helper: input_datetime.monkey_light_manual_expiration
+      - action: script.set_manual_mode_timer
+        metadata: {}
+        data:
+          mode: Infinite
+          force: false
+          auto_mode_helper: input_boolean.toilet_ceiling_light_auto_mode
+          timer_active_helper: input_boolean.toilet_ceiling_light_timer_active
+          expiration_helper: input_datetime.toilet_ceiling_light_manual_expiration
+      - action: script.set_manual_mode_timer
+        metadata: {}
+        data:
+          mode: Infinite
+          force: false
+          auto_mode_helper: input_boolean.toilet_sink_light_auto_mode
+          timer_active_helper: input_boolean.toilet_sink_light_timer_active
+          expiration_helper: input_datetime.toilet_sink_light_manual_expiration
     - conditions:
       - condition: trigger
         id:
         - Finish Maintenance
       sequence:
-      - action: input_select.select_option
-        metadata: {}
-        target:
-          entity_id:
-          - input_select.hallway_lighting_mode
-          - input_select.jungle_ceiling_lighting_mode
-          - input_select.monkey_lighting_mode
-          - input_select.jungle_sink_lighting_mode
-          - input_select.toilet_ceiling_lighting_mode
-          - input_select.toilet_sink_lighting_mode
-        data:
-          option: Auto
       - action: input_boolean.turn_on
         metadata: {}
         target:
-          entity_id: input_boolean.jungle_music
+          entity_id:
+          - input_boolean.jungle_music
+          - input_boolean.hallway_lights_auto_mode
+          - input_boolean.kitchen_lights_auto_mode
+          - input_boolean.monkey_light_auto_mode
+          - input_boolean.jungle_ceiling_light_auto_mode
+          - input_boolean.jungle_sink_light_auto_mode
+          - input_boolean.toilet_ceiling_light_auto_mode
+          - input_boolean.toilet_sink_light_auto_mode
         data: {}
+      - action: input_boolean.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id:
+          - input_boolean.hallway_lights_timer_active
+          - input_boolean.kitchen_light_timer_active
+          - input_boolean.monkey_light_timer_active
+          - input_boolean.jungle_ceiling_light_timer_active
+          - input_boolean.jungle_sink_light_timer_active
+          - input_boolean.toilet_ceiling_light_timer_active
+          - input_boolean.toilet_sink_light_timer_active
   mode: single
 - id: '1786183660188'
   alias: Small Light Automation
@@ -2181,40 +2287,470 @@
         minutes: 0
         seconds: 0
       trigger_on_vibe_change: true
-- id: '1786199208134'
-  alias: 'Test: Thunderstorm Lightning Strike (Fast)'
-  triggers: []
+- id: '1786309430020'
+  alias: X Light Scroll Button
+  description: Controls X Light through a middleman template light when using the
+    ikea BILRESA scrollbutton
+  use_blueprint:
+    path: custom/ikea-bilresa-scroll-wheel-kelvin.yaml
+    input:
+      controller_device: 8acd1351864ee2c2bdeb153046c1315e
+      scroll_target: light.x_light
+      color_temp_target: light.x_light
+      scroll_mode_helper: input_select.x_light_scroll_mode
+      button_on_double:
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 0
+          milliseconds: 1
+      button_off_double:
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 0
+          milliseconds: 1
+- id: '1786309673750'
+  alias: Seb Light Scroll Button
+  description: Controls Seb Light through a middleman template light when using the
+    ikea BILRESA scrollbutton
+  use_blueprint:
+    path: custom/ikea-bilresa-scroll-wheel-kelvin.yaml
+    input:
+      controller_device: 9976b5736cb213ed683d0ca3efeeaa61
+      scroll_target: light.seb_lights
+      color_temp_target: light.seb_lights
+      scroll_mode_helper: input_select.seb_lights_scroll_mode
+      button_on_double:
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 0
+          milliseconds: 1
+      button_off_double:
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 0
+          milliseconds: 1
+- id: '1786309783553'
+  alias: Jungle Lights Scroll Button
+  description: Controls Jungle Lights through a middleman template light when using
+    the ikea BILRESA scrollbutton
+  use_blueprint:
+    path: custom/ikea-bilresa-scroll-wheel-kelvin.yaml
+    input:
+      controller_device: 02033a5d4d94441fdff63a2b223adddc
+      scroll_target: light.jungle_main_lights
+      color_temp_target: light.jungle_main_lights
+      scroll_mode_helper: input_select.jungle_lights_scroll_mode
+      button_on_double:
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 0
+          milliseconds: 1
+      button_off_double:
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 0
+          milliseconds: 1
+      button_off_short: []
+- id: '1786368587259'
+  alias: Kitchen Light Buttons
+  description: Maps buttons (2 buttons) to control the lights in the kitchen.
+  triggers:
+  - domain: mqtt
+    device_id: a8a28466447793dbb6679562b1f57766
+    type: action
+    subtype: 'on'
+    trigger: device
+    id: on_single
+  - domain: mqtt
+    device_id: a8a28466447793dbb6679562b1f57766
+    type: action
+    subtype: on_double
+    trigger: device
+    id: on_double
+  - domain: mqtt
+    device_id: a8a28466447793dbb6679562b1f57766
+    type: action
+    subtype: brightness_move_up
+    trigger: device
+    id: on_long
+  - domain: mqtt
+    device_id: a8a28466447793dbb6679562b1f57766
+    type: action
+    subtype: 'off'
+    trigger: device
+    id: off_single
+  - domain: mqtt
+    device_id: a8a28466447793dbb6679562b1f57766
+    type: action
+    subtype: off_double
+    trigger: device
+    id: off_double
+  - domain: mqtt
+    device_id: a8a28466447793dbb6679562b1f57766
+    type: action
+    subtype: brightness_move_down
+    trigger: device
+    id: off_long
+  conditions: []
   actions:
-  - repeat:
-      count: '{{ range(min_flashes, max_flashes + 1) | random }}'
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - on_single
       sequence:
-      - action: light.turn_on
-        target:
-          entity_id: '{{ target_light }}'
+      - action: script.increase_brightness_level
+        metadata: {}
         data:
-          brightness: 70
-          color_temp_kelvin: '{{ flash_color_temp }}'
-          transition: 0
-      - delay:
-          milliseconds: '{{ range(min_delay_ms, max_delay_ms) | random }}'
-      - action: light.turn_on
-        target:
-          entity_id: '{{ target_light }}'
+          level: step
+          target: light.kitchen_lights
+          automation_entity: automation.kitchen_lights_automation
+      - action: script.set_manual_mode_timer
+        metadata: {}
         data:
-          brightness: 1
-          transition: 0
+          mode: Timer
+          duration:
+            hours: 2
+            minutes: 0
+            seconds: 0
+          auto_mode_helper: input_boolean.kitchen_lights_auto_mode
+          timer_active_helper: input_boolean.kitchen_lights_timer_active
+          expiration_helper: input_datetime.kitchen_lights_manual_expiration
+    - conditions:
+      - condition: trigger
+        id:
+        - off_single
+      sequence:
+      - action: light.turn_off
+        metadata: {}
+        target:
+          entity_id: light.kitchen_lights
+        data: {}
       - delay:
-          milliseconds: '{{ range(min_delay_ms, max_delay_ms) | random }}'
-  - action: light.turn_off
-    target:
-      entity_id: '{{ target_light }}'
+          hours: 0
+          minutes: 0
+          seconds: 1
+          milliseconds: 0
+      - action: automation.trigger
+        metadata: {}
+        target:
+          entity_id: automation.kitchen_lights_reset_to_auto
+        data:
+          skip_condition: true
+    - conditions:
+      - condition: trigger
+        id:
+        - on_double
+      sequence:
+      - action: script.increase_brightness_level
+        metadata: {}
+        data:
+          level: max
+          target: light.kitchen_lights
+      - action: script.set_manual_mode_timer
+        metadata: {}
+        data:
+          mode: Time
+          auto_mode_helper: input_boolean.kitchen_lights_auto_mode
+          timer_active_helper: input_boolean.kitchen_lights_timer_active
+          expiration_helper: input_datetime.kitchen_lights_manual_expiration
+          time: 07:00:00
+    - conditions:
+      - condition: trigger
+        id:
+        - off_double
+      sequence:
+      - action: light.turn_off
+        metadata: {}
+        target:
+          entity_id: light.kitchen_lights
+        data: {}
+      - action: script.set_manual_mode_timer
+        metadata: {}
+        data:
+          mode: Time
+          auto_mode_helper: input_boolean.kitchen_lights_auto_mode
+          timer_active_helper: input_boolean.kitchen_lights_timer_active
+          expiration_helper: input_datetime.kitchen_lights_manual_expiration
+          time: 07:00:00
+    - conditions:
+      - condition: trigger
+        id:
+        - off_long
+        - on_long
+      sequence:
+      - action: automation.trigger
+        metadata: {}
+        target:
+          entity_id: automation.kitchen_lights_reset_to_auto
+        data:
+          skip_condition: true
+  mode: restart
+- id: '1786368791890'
+  alias: Toilet Light Buttons
+  description: Maps buttons (2x2 buttons) to control the lights in the kitchen.
+  triggers:
+  - domain: mqtt
+    device_id: 0ca5b6b269c0938889d03d43096bc355
+    type: action
+    subtype: 'on'
+    trigger: device
+    id: on_single
+  - domain: mqtt
+    device_id: 0ca5b6b269c0938889d03d43096bc355
+    type: action
+    subtype: on_double
+    trigger: device
+    id: on_double
+  - domain: mqtt
+    device_id: 0ca5b6b269c0938889d03d43096bc355
+    type: action
+    subtype: brightness_move_up
+    trigger: device
+    id: on_long
+  - domain: mqtt
+    device_id: 0ca5b6b269c0938889d03d43096bc355
+    type: action
+    subtype: 'off'
+    trigger: device
+    id: off_single
+  - domain: mqtt
+    device_id: 0ca5b6b269c0938889d03d43096bc355
+    type: action
+    subtype: off_double
+    trigger: device
+    id: off_double
+  - domain: mqtt
+    device_id: 0ca5b6b269c0938889d03d43096bc355
+    type: action
+    subtype: brightness_move_down
+    trigger: device
+    id: off_long
+  - domain: mqtt
+    device_id: 13fdc0f255838705242ac1a6182c4876
+    type: action
+    subtype: 1_short_release
+    trigger: device
+    id: on_single
+  - domain: mqtt
+    device_id: 13fdc0f255838705242ac1a6182c4876
+    type: action
+    subtype: 1_double_press
+    trigger: device
+    id: on_double
+  - domain: mqtt
+    device_id: 13fdc0f255838705242ac1a6182c4876
+    type: action
+    subtype: 1_long_press
+    trigger: device
+    id: on_long
+  - domain: mqtt
+    device_id: 13fdc0f255838705242ac1a6182c4876
+    type: action
+    subtype: 2_short_release
+    trigger: device
+    id: off_single
+  - domain: mqtt
+    device_id: 13fdc0f255838705242ac1a6182c4876
+    type: action
+    subtype: 2_double_press
+    trigger: device
+    id: off_double
+  - domain: mqtt
+    device_id: 13fdc0f255838705242ac1a6182c4876
+    type: action
+    subtype: 2_long_press
+    trigger: device
+    id: off_long
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - on_single
+      sequence:
+      - action: script.increase_brightness_level
+        metadata: {}
+        data:
+          level: step
+          target: light.toilet_ceiling_light
+          automation_entity: automation.toilet_ceiling_light_automation
+      - action: script.increase_brightness_level
+        metadata: {}
+        data:
+          level: step
+          target: light.toilet_sink_light
+          automation_entity: automation.toilet_sink_light_automation
+      - action: script.set_manual_mode_timer
+        metadata: {}
+        data:
+          mode: Timer
+          duration:
+            hours: 2
+            minutes: 0
+            seconds: 0
+          auto_mode_helper: input_boolean.toilet_ceiling_light_auto_mode
+          timer_active_helper: input_boolean.toilet_ceiling_light_timer_active
+          expiration_helper: input_datetime.toilet_ceiling_light_manual_expiration
+      - action: script.set_manual_mode_timer
+        metadata: {}
+        data:
+          mode: Timer
+          duration:
+            hours: 2
+            minutes: 0
+            seconds: 0
+          auto_mode_helper: input_boolean.toilet_sink_light_auto_mode
+          timer_active_helper: input_boolean.toilet_sink_light_timer_active
+          expiration_helper: input_datetime.toilet_sink_light_manual_expiration
+    - conditions:
+      - condition: trigger
+        id:
+        - off_single
+      sequence:
+      - action: light.turn_off
+        metadata: {}
+        target:
+          entity_id: light.toilet_lights
+        data: {}
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 1
+          milliseconds: 0
+      - action: automation.trigger
+        metadata: {}
+        target:
+          entity_id:
+          - automation.toilet_ceiling_light_reset_to_auto
+          - automation.toilet_sink_light_reset_to_auto
+        data:
+          skip_condition: true
+    - conditions:
+      - condition: trigger
+        id:
+        - on_double
+      sequence:
+      - action: script.increase_brightness_level
+        metadata: {}
+        data:
+          level: max
+          target: light.toilet_ceiling_light
+      - action: script.increase_brightness_level
+        metadata: {}
+        data:
+          level: max
+          target: light.toilet_sink_light
+      - action: script.set_manual_mode_timer
+        metadata: {}
+        data:
+          mode: Time
+          auto_mode_helper: input_boolean.toilet_ceiling_light_auto_mode
+          timer_active_helper: input_boolean.toilet_ceiling_light_timer_active
+          expiration_helper: input_datetime.toilet_ceiling_light_manual_expiration
+          time: 07:00:00
+      - action: script.set_manual_mode_timer
+        metadata: {}
+        data:
+          mode: Time
+          auto_mode_helper: input_boolean.toilet_sink_light_auto_mode
+          timer_active_helper: input_boolean.toilet_sink_light_timer_active
+          expiration_helper: input_datetime.toilet_sink_light_manual_expiration
+          time: 07:00:00
+    - conditions:
+      - condition: trigger
+        id:
+        - off_double
+      sequence:
+      - action: light.turn_off
+        metadata: {}
+        target:
+          entity_id: light.toilet_lights
+        data: {}
+      - action: script.set_manual_mode_timer
+        metadata: {}
+        data:
+          mode: Time
+          auto_mode_helper: input_boolean.toilet_ceiling_light_auto_mode
+          timer_active_helper: input_boolean.toilet_ceiling_light_timer_active
+          expiration_helper: input_datetime.toilet_ceiling_light_manual_expiration
+          time: 07:00:00
+      - action: script.set_manual_mode_timer
+        metadata: {}
+        data:
+          mode: Time
+          auto_mode_helper: input_boolean.toilet_sink_light_auto_mode
+          timer_active_helper: input_boolean.toilet_sink_light_timer_active
+          expiration_helper: input_datetime.toilet_sink_light_manual_expiration
+          time: 07:00:00
+    - conditions:
+      - condition: trigger
+        id:
+        - on_long
+        - off_long
+      sequence:
+      - action: automation.trigger
+        metadata: {}
+        target:
+          entity_id:
+          - automation.toilet_ceiling_light_reset_to_auto
+          - automation.toilet_sink_light_reset_to_auto
+        data:
+          skip_condition: true
+  mode: restart
+- id: '1786372318882'
+  alias: Kitchen Lights Reset to Auto
+  description: Resets the Lighting Mode helper of Kitchen Lights to Auto after manual
+    input, unless Vibe Mode is Maintenance (then sets non-expiring Manual instead).
+  use_blueprint:
+    path: custom/lighting_mode_reset_to_auto.yaml
+    input:
+      light_entity: light.kitchen_lights
+      automation_entity: automation.kitchen_lights_automation
+      auto_mode_helper: input_boolean.kitchen_lights_auto_mode
+      expiration_helper: input_datetime.kitchen_light_manual_expiration
+      timer_active_helper: input_boolean.kitchen_light_timer_active
+- id: '1786372558766'
+  alias: Kitchen Lights Automation
+  description: Controls the lights in the kitchen based on a motion sensor.
+  use_blueprint:
+    path: custom/vibe_motion_lighting.yaml
+    input:
+      motion_sensor:
+      - binary_sensor.kitchen_motion_sensor_occupancy
+      target_light: light.kitchen_lights
+      tod_helper: input_select.time_of_day_mode
+      no_motion_timeout:
+        hours: 0
+        minutes: 2
+        seconds: 0
+      trigger_on_vibe_change: true
+      trigger_on_maintenance: true
+      auto_mode_helper: input_boolean.kitchen_lights_auto_mode
+- id: '1786401410106'
+  alias: Jungle Egg Auto Finish
+  description: Detects and tells the Audio Controller that an easter egg has finished
+    playing and the ambient volume can be restored to its original value.
+  triggers:
+  - trigger: state
+    entity_id:
+    - media_player.janitor_primary
+    - media_player.janitor_secondary
+    to: idle
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.entity_id == states(''input_text.jungle_egg_player'')
+      }}'
+  actions:
+  - action: script.jungle_audio_controller
     data:
-      transition: 0
+      action: stop
+      category: easter_egg
   mode: single
-  variables:
-    target_light: light.monkey_light
-    flash_color_temp: 3000
-    min_flashes: 3
-    max_flashes: 6
-    min_delay_ms: 40
-    max_delay_ms: 120
