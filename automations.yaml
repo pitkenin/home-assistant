@@ -1,114 +1,3 @@
-- id: '1773949419676'
-  alias: (OLD) Hallway Light Motion Activation
-  description: Controls the lights in the hallway based on a motion sensor.
-  triggers:
-  - type: occupied
-    device_id: 1f77ec67617a8ffa5816cd79982d271e
-    entity_id: a555ec3b78937ca03e45669429c79601
-    domain: binary_sensor
-    trigger: device
-  conditions:
-  - condition: state
-    entity_id: input_select.hallway_lighting_mode
-    state:
-    - Auto
-  actions:
-  - choose:
-    - conditions:
-      - condition: state
-        entity_id: input_select.time_of_day_mode
-        state:
-        - Night
-      sequence:
-      - alias: Turn on the light
-        action: light.turn_on
-        target:
-          entity_id:
-          - light.hallway_light_3
-        data:
-          effect: Night light
-    default:
-    - alias: Turn on the light
-      action: light.turn_on
-      target:
-        entity_id:
-        - light.hallway_light_1
-        - light.hallway_light_2
-        - light.hallway_light_3
-      data: {}
-  - wait_for_trigger:
-    - trigger: state
-      entity_id:
-      - binary_sensor.hallway_occupancy
-      to:
-      - 'off'
-      for:
-        hours: 0
-        minutes: 0
-        seconds: 30
-    timeout:
-      hours: 1
-      minutes: 0
-      seconds: 0
-      milliseconds: 0
-  - if:
-    - condition: state
-      entity_id: input_select.hallway_lighting_mode
-      state:
-      - Auto
-    then:
-    - alias: Turn off the light
-      action: light.turn_off
-      target:
-        entity_id:
-        - light.hallway_light_1
-        - light.hallway_light_2
-        - light.hallway_light_3
-  mode: restart
-  max_exceeded: silent
-- id: '1773950827765'
-  alias: (OLD) Turn on Jungle Sink Light
-  description: Control the bathroom mirror sink light based on presence in front of
-    the sink
-  triggers:
-  - type: occupied
-    device_id: 05e258c366e49a46b100398b9505ffd9
-    entity_id: 424198a875bcc9bca4050b2f88c047ee
-    domain: binary_sensor
-    trigger: device
-    id: light on
-  - type: not_occupied
-    device_id: 05e258c366e49a46b100398b9505ffd9
-    entity_id: 424198a875bcc9bca4050b2f88c047ee
-    domain: binary_sensor
-    trigger: device
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 2
-    id: light off
-  conditions: []
-  actions:
-  - choose:
-    - conditions:
-      - condition: trigger
-        id:
-        - light on
-      sequence:
-      - type: turn_on
-        device_id: e5a557bb69b9f2c2639efe2ccf9183d5
-        entity_id: bd15701c9143a8b06dfdf7262e279d75
-        domain: switch
-    - conditions:
-      - condition: trigger
-        id:
-        - light off
-      sequence:
-      - type: turn_off
-        device_id: e5a557bb69b9f2c2639efe2ccf9183d5
-        entity_id: bd15701c9143a8b06dfdf7262e279d75
-        domain: switch
-  mode: single
 - id: '1774193753994'
   alias: Detect Laundry Cycle
   description: Detect when the laundry machine has begun operating
@@ -419,79 +308,6 @@
         data:
           skip_condition: true
   mode: restart
-- id: '1774199438030'
-  alias: (OLD) Hallway Lighting Reset to Auto Mode
-  description: Resets the control mode of the hallway lights to Auto after manual
-    input.
-  triggers:
-  - trigger: state
-    entity_id:
-    - input_select.hallway_lighting_mode
-    to:
-    - Timer
-    for:
-      hours: 2
-      minutes: 0
-      seconds: 0
-    id: timer
-  - trigger: state
-    entity_id:
-    - input_select.time_of_day_mode
-    to:
-    - Morning
-    id: morning
-  conditions:
-  - condition: or
-    conditions:
-    - condition: and
-      conditions:
-      - condition: state
-        entity_id: input_select.hallway_lighting_mode
-        state:
-        - Timer
-      - condition: trigger
-        id:
-        - timer
-    - condition: and
-      conditions:
-      - condition: state
-        entity_id: input_select.hallway_lighting_mode
-        state:
-        - Morning
-      - condition: trigger
-        id:
-        - morning
-  actions:
-  - if:
-    - condition: state
-      entity_id: input_select.vibe_mode
-      state:
-      - Maintenance
-    then:
-    - action: input_select.select_option
-      metadata: {}
-      target:
-        entity_id: input_select.hallway_lighting_mode
-      data:
-        option: Infinite
-    else:
-    - action: input_select.select_option
-      metadata: {}
-      target:
-        entity_id: input_select.hallway_lighting_mode
-      data:
-        option: Auto
-    - condition: state
-      state:
-      - 'on'
-      entity_id: light.hallway_lights
-    - action: automation.trigger
-      metadata: {}
-      target:
-        entity_id: automation.hallway_lights_automation
-      data:
-        skip_condition: false
-  mode: restart
 - id: '1774203301814'
   alias: Living Room Lights Manual Control
   description: Map living room lighting buttons (4 buttons) to different actions to
@@ -630,64 +446,6 @@
             enqueue: replace
             media_type: playlist
   mode: single
-- id: '1774203682753'
-  alias: (OLD) Monkey Light Motion Activation
-  description: Controls the main light in the bathroom based on a presense sensor.
-  triggers:
-  - trigger: state
-    entity_id:
-    - binary_sensor.jungle_presence
-    from:
-    - 'off'
-    to:
-    - 'on'
-    id: 'on'
-  - trigger: state
-    entity_id:
-    - binary_sensor.jungle_presence
-    from:
-    - 'on'
-    to:
-    - 'off'
-    id: 'off'
-  actions:
-  - choose:
-    - conditions:
-      - condition: trigger
-        id: 'on'
-      sequence:
-      - action: light.turn_on
-        target:
-          entity_id:
-          - light.monkey_light
-        data:
-          brightness_pct: 1
-      - delay:
-          milliseconds: 100
-      - action: light.turn_on
-        target:
-          entity_id:
-          - light.monkey_light
-        data:
-          brightness_pct: 20
-          transition: 2
-    - conditions:
-      - condition: trigger
-        id: 'off'
-      sequence:
-      - action: light.turn_off
-        target:
-          entity_id:
-          - light.monkey_light
-        data: {}
-      - action: light.turn_off
-        metadata: {}
-        target:
-          entity_id:
-          - light.jungle_ceiling_light
-        data: {}
-  mode: restart
-  max_exceeded: silent
 - id: '1774217394799'
   alias: Select Time of Day Mode
   description: Controls the time of day mode (helper) based on current time of day.
@@ -784,48 +542,6 @@
         data:
           option: Night
   mode: single
-- id: '1774296940266'
-  alias: (OLD) X Light Motion Activation
-  description: Controls Lighting in the room based on a motion sensor.
-  triggers:
-  - type: occupied
-    device_id: f17a1598e6d915bce0f8a60452f0e8c0
-    entity_id: 2c51b3a639e8469c0d30d6860798ecac
-    domain: binary_sensor
-    trigger: device
-  conditions:
-  - condition: state
-    entity_id: input_select.x_lighting_mode
-    state:
-    - Auto
-  actions:
-  - alias: Turn on the light
-    action: light.turn_on
-    data: {}
-    target:
-      entity_id: light.x_light
-  - alias: Wait until there is no motion from device
-    wait_for_trigger:
-    - trigger: state
-      entity_id:
-      - binary_sensor.x_room_motion_sensor
-      from:
-      - 'on'
-      to:
-      - 'off'
-  - alias: Wait the number of seconds that has been set
-    delay:
-      hours: 0
-      minutes: 15
-      seconds: 0
-      milliseconds: 0
-  - alias: Turn off the light
-    action: light.turn_off
-    data: {}
-    target:
-      entity_id: light.x_light
-  mode: restart
-  max_exceeded: silent
 - id: '1774297821481'
   alias: Living Room 2-Buttons
   description: 'Maps buttons (2 buttons) to custom actions, for example: saving a
@@ -1005,76 +721,6 @@
       entity_id: light.x_light
     data: {}
   mode: single
-- id: '1775589257276'
-  alias: (OLD) Toilet Light Automation
-  description: Controls toilet lighting based on time of day, triggered by vibration
-    sensor on the door or a motion sensor on the wall.
-  triggers:
-  - trigger: mqtt
-    options:
-      topic: zigbee2mqtt/Vibration Sensor
-      value_template: '{{ value_json.action }}'
-      payload: movement
-  - trigger: state
-    entity_id: binary_sensor.toilet_motion_sensor_occupancy
-    to: 'on'
-  actions:
-  - choose:
-    - conditions:
-      - condition: state
-        entity_id: input_select.time_of_day_mode
-        state:
-        - Night
-      sequence:
-      - action: light.turn_on
-        target:
-          entity_id:
-          - light.toilet_ceiling_light
-        data:
-          rgb_color:
-          - 255
-          - 157
-          - 157
-    default:
-    - if:
-      - condition: state
-        entity_id: input_select.vibe_mode
-        state:
-        - Party
-        - Sauna
-        - Cozy Nook
-        - Movie
-      then:
-      - action: light.turn_on
-        target:
-          entity_id: light.toilet_light
-        data:
-          rgb_color:
-          - 255
-          - 0
-          - 0
-      else:
-      - action: light.turn_on
-        target:
-          entity_id: light.toilet_light
-        data: {}
-    - action: light.turn_on
-      metadata: {}
-      target:
-        entity_id:
-        - light.toilet_sink_light
-      data: {}
-  - wait_template: '{{ is_state(''binary_sensor.toilet_motion_sensor_occupancy'',
-      ''off'') }}'
-  - delay:
-      hours: 0
-      minutes: 15
-      seconds: 0
-      milliseconds: 0
-  - action: light.turn_off
-    target:
-      entity_id: light.toilet_lights
-  mode: restart
 - id: '1780311054979'
   alias: Boot Up
   description: Resets correct values used by other automations after a system restart.
@@ -1302,6 +948,26 @@
     to: 'off'
     id: toilet_vacant
   - trigger: state
+    entity_id:
+    - binary_sensor.jungle_shower_presence
+    to:
+    - 'on'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 20
+    id: shower_occupied
+  - trigger: state
+    entity_id:
+    - binary_sensor.jungle_shower_presence
+    to:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 5
+    id: shower_vacant
+  - trigger: state
     entity_id: input_select.time_of_day_mode
     id: time_changed
   conditions:
@@ -1326,6 +992,7 @@
           action: play
           category: ambient
           sound_id: '{{ ambient_id }}'
+          volume_ratio: 1
     - conditions:
       - condition: trigger
         id:
@@ -1341,6 +1008,7 @@
             action: play
             category: ambient
             sound_id: '{{ ambient_id }}'
+            volume_ratio: 1
         else:
         - action: script.jungle_audio_controller
           data:
@@ -1364,6 +1032,62 @@
       - action: input_boolean.turn_on
         target:
           entity_id: input_boolean.jungle_easter_egg_played
+    - conditions:
+      - condition: trigger
+        id:
+        - shower_occupied
+      - condition: state
+        entity_id: input_boolean.enable_thunderstorm
+        state:
+        - 'on'
+      sequence:
+      - action: input_number.set_value
+        metadata: {}
+        target:
+          entity_id: input_number.jungle_target_volume
+        data:
+          value: 0.7
+      - action: script.jungle_audio_controller
+        metadata: {}
+        data:
+          volume_ratio: 1
+          forceplay: true
+          action: play
+          category: ambient
+          sound_id: '{{ states(''input_text.jungle_ambient_sound'') ~ '' Rain'' }}'
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.thunderstorm_playing
+        data: {}
+      - action: script.play_thunderstorm
+        metadata: {}
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - shower_vacant
+      sequence:
+      - action: input_number.set_value
+        metadata: {}
+        target:
+          entity_id: input_number.jungle_target_volume
+        data:
+          value: 0.5
+      - action: script.jungle_audio_controller
+        metadata: {}
+        data:
+          volume_ratio: 1
+          forceplay: true
+          action: play
+          category: ambient
+          sound_id: '{{ states(''input_text.jungle_ambient_sound'') | replace('' Rain'',
+            '''') }}'
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id: input_boolean.thunderstorm_playing
+        data: {}
     - conditions:
       - condition: trigger
         id: toilet_vacant
@@ -1527,368 +1251,6 @@
       item: '{{ trigger.event.data.action | replace(''MARK_DONE_'', '''') }}'
       status: completed
   mode: parallel
-- id: '1786040400781'
-  alias: (OLD) Jungle Ceiling Lighting Reset to Auto Mode
-  description: Resets the control mode of the jungle ceiling lights to Auto after
-    manual input.
-  triggers:
-  - trigger: state
-    entity_id:
-    - input_select.jungle_ceiling_lighting_mode
-    to:
-    - Timer
-    for:
-      hours: 2
-      minutes: 0
-      seconds: 0
-    id: timer
-  - trigger: state
-    entity_id:
-    - input_select.time_of_day_mode
-    to:
-    - Morning
-    id: morning
-  conditions:
-  - condition: or
-    conditions:
-    - condition: and
-      conditions:
-      - condition: state
-        entity_id: input_select.jungle_ceiling_lighting_mode
-        state:
-        - Timer
-      - condition: trigger
-        id:
-        - timer
-    - condition: and
-      conditions:
-      - condition: state
-        entity_id: input_select.jungle_ceiling_lighting_mode
-        state:
-        - Morning
-      - condition: trigger
-        id:
-        - morning
-  actions:
-  - action: input_select.select_option
-    metadata: {}
-    target:
-      entity_id:
-      - input_select.jungle_ceiling_lighting_mode
-    data:
-      option: Auto
-  - condition: state
-    state:
-    - 'off'
-    entity_id: binary_sensor.jungle_presence
-  - action: light.turn_off
-    metadata: {}
-    target:
-      entity_id:
-      - light.jungle_ceiling_light
-    data: {}
-  mode: single
-- id: '1786040526990'
-  alias: (OLD) Monkey Lighting Reset to Auto
-  description: Resets the control mode of the Monkey Light to Auto after manual input.
-  triggers:
-  - trigger: state
-    entity_id:
-    - input_select.monkey_lighting_mode
-    to:
-    - Timer
-    for:
-      hours: 2
-      minutes: 0
-      seconds: 0
-    id: timer
-  - trigger: state
-    entity_id:
-    - input_select.time_of_day_mode
-    to:
-    - Morning
-    id: morning
-  conditions:
-  - condition: or
-    conditions:
-    - condition: and
-      conditions:
-      - condition: state
-        entity_id: input_select.monkey_lighting_mode
-        state:
-        - Timer
-      - condition: trigger
-        id:
-        - timer
-    - condition: and
-      conditions:
-      - condition: state
-        entity_id: input_select.monkey_lighting_mode
-        state:
-        - Morning
-      - condition: trigger
-        id:
-        - morning
-  actions:
-  - action: input_select.select_option
-    metadata: {}
-    target:
-      entity_id:
-      - input_select.monkey_lighting_mode
-    data:
-      option: Auto
-  - condition: state
-    state:
-    - 'off'
-    entity_id: binary_sensor.jungle_presence
-  - action: light.turn_off
-    metadata: {}
-    target:
-      entity_id:
-      - light.monkey_light
-    data: {}
-  mode: single
-- id: '1786040923066'
-  alias: (OLD) Jungle Sink Lighting Reset to Auto
-  description: Resets the control mode of the Jungle Sink Light to Auto after manual
-    input.
-  triggers:
-  - trigger: state
-    entity_id:
-    - input_select.jungle_sink_lighting_mode
-    to:
-    - Timer
-    for:
-      hours: 2
-      minutes: 0
-      seconds: 0
-    id: timer
-  - trigger: state
-    entity_id:
-    - input_select.time_of_day_mode
-    to:
-    - Morning
-    id: morning
-  conditions:
-  - condition: or
-    conditions:
-    - condition: and
-      conditions:
-      - condition: state
-        entity_id: input_select.jungle_sink_lighting_mode
-        state:
-        - Timer
-      - condition: trigger
-        id:
-        - timer
-    - condition: and
-      conditions:
-      - condition: state
-        entity_id: input_select.jungle_sink_lighting_mode
-        state:
-        - Morning
-      - condition: trigger
-        id:
-        - morning
-  actions:
-  - action: input_select.select_option
-    metadata: {}
-    target:
-      entity_id: input_select.jungle_sink_lighting_mode
-    data:
-      option: Auto
-  - condition: state
-    state:
-    - 'off'
-    entity_id: binary_sensor.jungle_sink_presence
-  - action: light.turn_off
-    metadata: {}
-    target:
-      entity_id:
-      - light.jungle_sink_light
-    data: {}
-  mode: single
-- id: '1786041383309'
-  alias: (OLD) Toilet Ceiling Lighting Reset to Auto
-  description: Resets the control mode of the Toilet Ceiling Light to Auto after manual
-    input.
-  triggers:
-  - trigger: state
-    entity_id:
-    - input_select.toilet_ceiling_lighting_mode
-    to:
-    - Timer
-    for:
-      hours: 2
-      minutes: 0
-      seconds: 0
-    id: timer
-  - trigger: state
-    entity_id:
-    - input_select.time_of_day_mode
-    to:
-    - Morning
-    id: morning
-  conditions:
-  - condition: or
-    conditions:
-    - condition: and
-      conditions:
-      - condition: state
-        entity_id: input_select.toilet_ceiling_lighting_mode
-        state:
-        - Timer
-      - condition: trigger
-        id:
-        - timer
-    - condition: and
-      conditions:
-      - condition: state
-        entity_id: input_select.toilet_ceiling_lighting_mode
-        state:
-        - Morning
-      - condition: trigger
-        id:
-        - morning
-  actions:
-  - action: input_select.select_option
-    metadata: {}
-    target:
-      entity_id:
-      - input_select.toilet_ceiling_lighting_mode
-    data:
-      option: Auto
-  - condition: state
-    state:
-    - 'off'
-    entity_id: binary_sensor.toilet_motion_sensor_occupancy
-  - action: light.turn_off
-    metadata: {}
-    target:
-      entity_id:
-      - light.toilet_ceiling_light
-    data: {}
-  mode: single
-- id: '1786041440281'
-  alias: (OLD) Toilet Sink Lighting Reset to Auto
-  description: Resets the control mode of the Toilet Sink Light to Auto after manual
-    input.
-  triggers:
-  - trigger: state
-    entity_id:
-    - input_select.toilet_sink_lighting_mode
-    to:
-    - Timer
-    for:
-      hours: 2
-      minutes: 0
-      seconds: 0
-    id: timer
-  - trigger: state
-    entity_id:
-    - input_select.time_of_day_mode
-    to:
-    - Morning
-    id: morning
-  conditions:
-  - condition: or
-    conditions:
-    - condition: and
-      conditions:
-      - condition: state
-        entity_id: input_select.toilet_sink_lighting_mode
-        state:
-        - Timer
-      - condition: trigger
-        id:
-        - timer
-    - condition: and
-      conditions:
-      - condition: state
-        entity_id: input_select.toilet_sink_lighting_mode
-        state:
-        - Morning
-      - condition: trigger
-        id:
-        - morning
-  actions:
-  - action: input_select.select_option
-    metadata: {}
-    target:
-      entity_id: input_select.toilet_sink_lighting_mode
-    data:
-      option: Auto
-  - condition: state
-    state:
-    - 'off'
-    entity_id: binary_sensor.toilet_motion_sensor_occupancy
-  - action: light.turn_off
-    metadata: {}
-    target:
-      entity_id:
-      - light.toilet_sink_light
-    data: {}
-  mode: single
-- id: '1786041614962'
-  alias: (OLD) X Room Lighting Reset to Auto
-  description: Resets the control mode of the X Room Light to Auto after manual input.
-  triggers:
-  - trigger: state
-    entity_id:
-    - input_select.x_lighting_mode
-    to:
-    - Timer
-    for:
-      hours: 2
-      minutes: 0
-      seconds: 0
-    id: timer
-  - trigger: state
-    entity_id:
-    - input_select.time_of_day_mode
-    to:
-    - Morning
-    id: morning
-  conditions:
-  - condition: or
-    conditions:
-    - condition: and
-      conditions:
-      - condition: state
-        entity_id: input_select.x_lighting_mode
-        state:
-        - Timer
-      - condition: trigger
-        id:
-        - timer
-    - condition: and
-      conditions:
-      - condition: state
-        entity_id: input_select.x_lighting_mode
-        state:
-        - Morning
-      - condition: trigger
-        id:
-        - morning
-  actions:
-  - action: input_select.select_option
-    metadata: {}
-    target:
-      entity_id:
-      - input_select.x_lighting_mode
-    data:
-      option: Auto
-  - condition: state
-    state:
-    - 'off'
-    entity_id: binary_sensor.0x54ef4410014a7576_occupancy
-  - action: light.turn_off
-    metadata: {}
-    target:
-      entity_id:
-      - light.x_light
-    data: {}
-  mode: single
 - id: '1786128416779'
   alias: Monkey Light Automation
   description: Controls the main light in the bathroom based on a presense sensor.
@@ -1905,6 +1267,7 @@
       tod_helper: input_select.time_of_day_mode
       trigger_on_vibe_change: true
       trigger_on_maintenance: true
+      auto_mode_helper: input_boolean.monkey_light_auto_mode
 - id: '1786131016658'
   alias: Hallway Lights Automation
   description: Controls the lights in the hallway based on a motion sensor.
@@ -1913,7 +1276,7 @@
     input:
       lighting_mode_helper: input_select.hallway_lighting_mode
       motion_sensor:
-      - binary_sensor.hallway_occupancy
+      - input_boolean.hallway_occupancy
       target_light: light.hallway_lights
       tod_helper: input_select.time_of_day_mode
       no_motion_timeout:
@@ -1922,6 +1285,7 @@
         seconds: 0
       trigger_on_vibe_change: true
       trigger_on_maintenance: true
+      auto_mode_helper: input_boolean.hallway_lights_auto_mode
 - id: '1786132256262'
   alias: Jungle Ceiling Light Automation
   description: Controls the ceiling light in the bathroom based on a presense sensor.
@@ -1938,6 +1302,7 @@
         seconds: 0
       trigger_on_vibe_change: true
       trigger_on_maintenance: true
+      auto_mode_helper: input_boolean.jungle_ceiling_light_auto_mode
 - id: '1786132326940'
   alias: Jungle Sink Light Automation
   description: Controls the sink light in the bathroom based on a presense area sensor.
@@ -1951,6 +1316,7 @@
       no_motion_timeout: 2
       trigger_on_vibe_change: true
       trigger_on_maintenance: true
+      auto_mode_helper: input_boolean.jungle_sink_light_auto_mode
 - id: '1786132410261'
   alias: Toilet Ceiling Light Automation
   description: Controls toilet lighting based on time of day, triggered by vibration
@@ -2753,4 +2119,144 @@
     data:
       action: stop
       category: easter_egg
+  mode: single
+- id: '1786444348361'
+  alias: Jungle Easter Egg Handler
+  description: Listens for triggers in the Jungle and queues up easter egg sounds
+    using a helper script
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.jungle_presence
+    to: 'on'
+    id: room_detected
+  - trigger: state
+    entity_id:
+    - binary_sensor.jungle_toilet_presence
+    to: 'on'
+    id: toilet_detected
+  - trigger: state
+    entity_id:
+    - binary_sensor.jungle_toilet_presence
+    to: 'off'
+    id: toilet_clear
+  - trigger: state
+    entity_id:
+    - binary_sensor.jungle_shower_presence
+    to:
+    - 'on'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+    id: shower_detected
+  - trigger: state
+    entity_id:
+    - binary_sensor.jungle_shower_presence
+    to:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+    id: shower_clear
+  - trigger: state
+    entity_id:
+    - binary_sensor.jungle_door_area_presence
+    to:
+    - 'on'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+    id: door_detected
+  - trigger: state
+    entity_id:
+    - binary_sensor.jungle_door_area_presence
+    to:
+    - 'on'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+    id: door_detected
+  - trigger: state
+    entity_id:
+    - binary_sensor.jungle_sink_presence
+    to:
+    - 'on'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+    id: sink_detected
+  - trigger: state
+    entity_id:
+    - binary_sensor.jungle_sink_presence
+    to:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+    id: sink_clear
+  conditions:
+  - condition: occupancy.is_detected
+    target:
+      entity_id: binary_sensor.jungle_presence
+    options:
+      behavior: any
+      for: 00:00:00
+  - condition: state
+    entity_id: input_boolean.thunderstorm_playing
+    state:
+    - 'off'
+  actions:
+  - if:
+    - condition: trigger
+      id:
+      - sink_detected
+    then: []
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 1
+      milliseconds: 0
+  mode: single
+- id: '1786456042655'
+  alias: Hallway Occupancy Helper
+  description: Manages helper boolean to keep track of hallway occupancy
+  triggers:
+  - trigger: motion.detected
+    target:
+      entity_id: binary_sensor.hallway_hallway_motion_sensor_2_motion
+    options:
+      behavior: each
+      for: 00:00:00
+    id: detected
+  - trigger: motion.cleared
+    target:
+      entity_id: binary_sensor.hallway_hallway_motion_sensor_2_motion
+    options:
+      behavior: each
+      for: 00:00:00
+    id: cleared
+  conditions: []
+  actions:
+  - if:
+    - condition: trigger
+      id:
+      - cleared
+    then:
+    - action: input_boolean.turn_off
+      metadata: {}
+      target:
+        entity_id: input_boolean.hallway_occupancy
+      data: {}
+    else:
+    - action: input_boolean.turn_on
+      metadata: {}
+      target:
+        entity_id: input_boolean.hallway_occupancy
+      data: {}
   mode: single

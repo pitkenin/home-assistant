@@ -14,17 +14,17 @@ But first, here's the interesting part:
 
 <!-- START_AI_SUMMARY -->
 
-This is the home I've been building since early 2026, one room and one small fix at a time. It's a bathroom that turns into a jungle, lights that know when to get out of the way, and a phone that quietly remembers the things I'd otherwise forget. Underneath all of it sit a handful of automations that watch the watchers, so the house keeps behaving even when I'm not paying attention.
+This is the home I've been building since early 2026, one room and one small fix at a time. It's a bathroom that turns into a jungle, lights that know when to get out of your way, and a phone that quietly remembers the things I'd otherwise forget. Underneath it all sit a handful of automations that watch the watchers, so the house keeps behaving even when I'm not paying attention.
 
 ### 🌴 Welcome to the Jungle
 
-Walking into the bathroom drops you straight into the Jungle: vines climb the walls, birds perch on the shelves, and a monkey hangs from the ceiling holding a lightbulb that glows warm the moment you step in. A beat later the room fills with sound, spilling out of the ceiling speakers run off a Raspberry Pi through Music Assistant. The soundtrack shifts with the time of day, settling into crickets late at night and bringing the birds back through the day. Step toward the toilet and, every so often, a hidden melody layers in quietly under the ambient sound, a little surprise tucked into the room that disappears again once you leave. Step up to the mirror to wash your hands and the cabinet light above it switches on by itself, sensing you're right there.
+Walking into the bathroom drops you straight into the Jungle: vines climb the walls, birds perch on the shelves, and a monkey hangs from the ceiling holding a lightbulb that glows warm the moment you step in. A beat later the room fills with sound, spilling out of the ceiling speakers run off a Raspberry Pi through Music Assistant. The soundtrack shifts with the time of day, settling into crickets late at night and bringing the birds back through the day. Linger by the toilet and, every so often, a hidden little melody layers in under the ambient sound, a surprise tucked into the room that most visits never trigger. Step up to the sink to wash your hands and the mirror light above it switches on by itself, sensing you're right there, then fades back out once you've moved on.
 
 ![🌴 Welcome to the Jungle](images/welcome-to-the-jungle.jpg)
 
 ### 🧠 Brain's Virtual Memory Extension
 
-I couldn't stop at automating the home itself; I wanted my daily life outside it handled too, so my phone became the messenger. Walk near a grocery store and it lists everything sitting on the shopping list, so I never stand in an aisle trying to remember what ran out. Finish a load of laundry — tracked by a smart plug watching the washing machine's power draw, since there's no sensor inside the machine itself — and it tells whoever started the wash that it's ready. When the printer's ink runs low it sends a notification that doesn't just disappear when swiped; it keeps quietly coming back until I actually refill it. The whole idea is to treat my phone as an extension of memory, so I can move through the day a little more care-free.
+I couldn't stop at automating the home itself; I wanted my daily life outside it handled too, so my phone became the messenger. Walk near a grocery store and it lists everything sitting on the shopping list, so I never stand in an aisle trying to remember what ran out. Finish a load of laundry — tracked by a smart plug watching the washing machine's power draw, since there's no sensor inside the machine itself — and it tells whoever started the wash that it's ready. When the printer's ink runs low it sends a notification that doesn't just disappear when swiped; it keeps quietly coming back until I actually refill it. The whole idea is externalising my own memory, so I can move through the day a little more care-free.
 
 ![🧠 Brain's Virtual Memory Extension](images/brain-s-virtual-memory-extension.jpg)
 
