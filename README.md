@@ -14,11 +14,11 @@ But first, here's the interesting part:
 
 <!-- START_AI_SUMMARY -->
 
-This is the home I've been building since early 2026, one room and one small fix at a time. It's a bathroom that turns into a jungle, lights that know when to get out of your way, and a phone that quietly remembers the things I'd otherwise forget. Underneath it all sit a handful of automations that watch the watchers, so the house keeps behaving even when I'm not paying attention.
+Home is the home I've been building since early 2026, one room and one small fix at a time. It's a bathroom that turns into a jungle, lights that know when to get out of your way, and a phone that quietly remembers the things I'd otherwise forget. Underneath it all sit a handful of automations that watch the watchers, so the house keeps behaving even when I'm not paying attention.
 
 ### 🌴 Welcome to the Jungle
 
-Walking into the bathroom drops you straight into the Jungle: vines climb the walls, birds perch on the shelves, and a monkey hangs from the ceiling holding a lightbulb that glows warm the moment you step in. A beat later the room fills with sound, spilling out of the ceiling speakers run off a Raspberry Pi through Music Assistant. The soundtrack shifts with the time of day, settling into crickets late at night and bringing the birds back through the day. Linger by the toilet and, every so often, a hidden little melody layers in under the ambient sound, a surprise tucked into the room that most visits never trigger. Step up to the sink to wash your hands and the mirror light above it switches on by itself, sensing you're right there, then fades back out once you've moved on.
+Walking into the bathroom drops you straight into the Jungle: vines climb the walls, birds perch on the shelves, and a monkey hangs from the ceiling holding a lightbulb that glows warm the moment you step in. A beat later the room fills with sound, spilling out of the ceiling speakers run off a Raspberry Pi through Music Assistant. The soundtrack shifts with the time of day, settling into crickets late at night and bringing the birds back through the day. Linger by the toilet and, every so often, a hidden little melody layers in under the ambient sound, a surprise tucked into the room that most visits never trigger. Step up to the sink to wash your hands and the mirror cabinet light above it switches on by itself, sensing you're right there, then fades back out once you've moved on.
 
 ![🌴 Welcome to the Jungle](images/welcome-to-the-jungle.jpg)
 

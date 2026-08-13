@@ -1054,7 +1054,8 @@
           forceplay: true
           action: play
           category: ambient
-          sound_id: '{{ states(''input_text.jungle_ambient_sound'') ~ '' Rain'' }}'
+          sound_id: '{{ states(''input_text.jungle_ambient_sound'') | replace('' Rain'',
+            '''') ~ '' Rain'' }}'
       - action: input_boolean.turn_on
         metadata: {}
         target:
@@ -1068,12 +1069,12 @@
         id:
         - shower_vacant
       sequence:
-      - action: input_number.set_value
+      - action: automation.trigger
         metadata: {}
         target:
-          entity_id: input_number.jungle_target_volume
+          entity_id: automation.adjust_jungle_target_volume_based_on_vibe_mode
         data:
-          value: 0.5
+          skip_condition: true
       - action: script.jungle_audio_controller
         metadata: {}
         data:
@@ -1520,20 +1521,6 @@
     entity_id: input_select.vibe_mode
   conditions: []
   actions:
-  - variables:
-      vibe_targets:
-        Normal: 0.45
-        Movie: 0.35
-        Cozy Nook: 0.35
-        Sauna: 0.45
-        Party: 0.5
-        Maintenance: 0
-        Board Games: 0.45
-  - action: input_number.set_value
-    target:
-      entity_id: input_number.jungle_target_volume
-    data:
-      value: '{{ vibe_targets.get(trigger.to_state.state, 0.5) }}'
   - alias: Start or Finish Maintenance
     choose:
     - conditions:
@@ -2095,7 +2082,7 @@
       tod_helper: input_select.time_of_day_mode
       no_motion_timeout:
         hours: 0
-        minutes: 2
+        minutes: 4
         seconds: 0
       trigger_on_vibe_change: true
       trigger_on_maintenance: true
@@ -2259,4 +2246,28 @@
       target:
         entity_id: input_boolean.hallway_occupancy
       data: {}
+  mode: single
+- id: '1786518946352'
+  alias: Adjust Jungle Target Volume Based on Vibe Mode
+  description: Adjusts Jungle Target Volume Based on current Vibe Mode. Can be triggered
+    manually to restore the correct target volume.
+  triggers:
+  - trigger: state
+    entity_id: input_select.vibe_mode
+  conditions: []
+  actions:
+  - variables:
+      vibe_targets:
+        Normal: 0.45
+        Movie: 0.35
+        Cozy Nook: 0.35
+        Sauna: 0.45
+        Party: 0.5
+        Maintenance: 0
+        Board Games: 0.45
+  - action: input_number.set_value
+    target:
+      entity_id: input_number.jungle_target_volume
+    data:
+      value: '{{ vibe_targets.get(trigger.to_state.state, 0.5) }}'
   mode: single
