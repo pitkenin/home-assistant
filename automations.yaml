@@ -2271,3 +2271,49 @@
     data:
       value: '{{ vibe_targets.get(trigger.to_state.state, 0.5) }}'
   mode: single
+- id: '1786607665342'
+  alias: Reset Vibe Mode in the Morning
+  description: Resets vibe mode back to Normal in the morning if it is not Maintenance
+    and has been off Normal for at least 2 hours.
+  triggers:
+  - trigger: time
+    at: 07:00:00
+    weekday:
+    - mon
+    - tue
+    - wed
+    - thu
+    - fri
+    - sat
+    - sun
+  conditions:
+  - condition: state
+    entity_id: input_select.vibe_mode
+    state:
+    - Board Games
+    - Cozy Nook
+    - Movie
+    - Party
+    - Sauna
+    for:
+      hours: 2
+      minutes: 0
+      seconds: 0
+  actions:
+  - action: input_select.select_option
+    metadata: {}
+    target:
+      entity_id: input_select.vibe_mode
+    data:
+      option: Normal
+  mode: single
+- id: '1786652576775'
+  alias: X Light Scholl Button v2
+  description: Controls X Light when using the ikea BILRESA scrollbutton
+  use_blueprint:
+    path: custom/ikea-bilresa-scroll-wheel-kelvin-v2.yaml
+    input:
+      controller_device: 8acd1351864ee2c2bdeb153046c1315e
+      scroll_target: light.x_light
+      warmth_min_kelvin: 2200
+      hue_select_helper: input_boolean.x_light_hue_select
