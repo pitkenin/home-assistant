@@ -987,12 +987,15 @@
         id:
         - room_entered
       sequence:
-      - action: script.jungle_audio_controller
+      - action: script.turn_on
+        target:
+          entity_id: script.jungle_audio_controller
         data:
-          action: play
-          category: ambient
-          sound_id: '{{ ambient_id }}'
-          volume_ratio: 1
+          variables:
+            action: play
+            category: ambient
+            sound_id: '{{ ambient_id }}'
+            volume_ratio: 1
     - conditions:
       - condition: trigger
         id:
@@ -1003,19 +1006,25 @@
           entity_id: binary_sensor.jungle_presence
           state: 'on'
         then:
-        - action: script.jungle_audio_controller
+        - action: script.turn_on
+          target:
+            entity_id: script.jungle_audio_controller
           data:
-            action: play
-            category: ambient
-            sound_id: '{{ ambient_id }}'
-            volume_ratio: 1
+            variables:
+              action: play
+              category: ambient
+              sound_id: '{{ ambient_id }}'
+              volume_ratio: 1
         else:
-        - action: script.jungle_audio_controller
+        - action: script.turn_on
+          target:
+            entity_id: script.jungle_audio_controller
           data:
-            action: play
-            category: ambient
-            sound_id: '{{ ambient_id }}'
-            volume_ratio: 0
+            variables:
+              action: play
+              category: ambient
+              sound_id: '{{ ambient_id }}'
+              volume_ratio: 0
     - conditions:
       - condition: trigger
         id: toilet_occupied
@@ -1023,12 +1032,15 @@
         entity_id: input_boolean.jungle_easter_egg_played
         state: 'off'
       sequence:
-      - action: script.jungle_audio_controller
+      - action: script.turn_on
+        target:
+          entity_id: script.jungle_audio_controller
         data:
-          action: play
-          category: easter_egg
-          sound_id: Terraria Jungle
-          volume_ratio: 0.5
+          variables:
+            action: play
+            category: easter_egg
+            sound_id: Terraria Jungle
+            volume_ratio: 0.5
       - action: input_boolean.turn_on
         target:
           entity_id: input_boolean.jungle_easter_egg_played
@@ -1047,23 +1059,25 @@
           entity_id: input_number.jungle_target_volume
         data:
           value: 0.7
-      - action: script.jungle_audio_controller
-        metadata: {}
+      - action: script.turn_on
+        target:
+          entity_id: script.jungle_audio_controller
         data:
-          volume_ratio: 1
-          forceplay: true
-          action: play
-          category: ambient
-          sound_id: '{{ states(''input_text.jungle_ambient_sound'') | replace('' Rain'',
-            '''') ~ '' Rain'' }}'
+          variables:
+            volume_ratio: 1
+            forceplay: true
+            action: play
+            category: ambient
+            sound_id: '{{ states(''input_text.jungle_ambient_sound'') | replace(''
+              Rain'', '''') ~ '' Rain'' }}'
       - action: input_boolean.turn_on
         metadata: {}
         target:
           entity_id: input_boolean.thunderstorm_playing
         data: {}
-      - action: script.play_thunderstorm
-        metadata: {}
-        data: {}
+      - action: script.turn_on
+        target:
+          entity_id: script.play_thunderstorm
     - conditions:
       - condition: trigger
         id:
@@ -1075,15 +1089,18 @@
           entity_id: automation.adjust_jungle_target_volume_based_on_vibe_mode
         data:
           skip_condition: true
-      - action: script.jungle_audio_controller
+      - action: script.turn_on
+        target:
+          entity_id: script.jungle_audio_controller
         metadata: {}
         data:
-          volume_ratio: 1
-          forceplay: true
-          action: play
-          category: ambient
-          sound_id: '{{ states(''input_text.jungle_ambient_sound'') | replace('' Rain'',
-            '''') }}'
+          variables:
+            volume_ratio: 1
+            forceplay: true
+            action: play
+            category: ambient
+            sound_id: '{{ states(''input_text.jungle_ambient_sound'') | replace(''
+              Rain'', '''') }}'
       - action: input_boolean.turn_off
         metadata: {}
         target:
@@ -1093,10 +1110,13 @@
       - condition: trigger
         id: toilet_vacant
       sequence:
-      - action: script.jungle_audio_controller
+      - action: script.turn_on
+        target:
+          entity_id: script.jungle_audio_controller
         data:
-          action: stop
-          category: easter_egg
+          variables:
+            action: stop
+            category: easter_egg
     - conditions:
       - condition: trigger
         id: room_left
@@ -1104,10 +1124,13 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.jungle_easter_egg_played
-      - action: script.jungle_audio_controller
+      - action: script.turn_on
+        target:
+          entity_id: script.jungle_audio_controller
         data:
-          action: stop
-          category: ambient
+          variables:
+            action: stop
+            category: ambient
   mode: queued
   max: 5
 - id: '1784909281271'
@@ -1517,8 +1540,6 @@
     id: Finish Maintenance
     from:
     - Maintenance
-  - trigger: state
-    entity_id: input_select.vibe_mode
   conditions: []
   actions:
   - alias: Start or Finish Maintenance
@@ -1640,76 +1661,28 @@
         minutes: 0
         seconds: 0
       trigger_on_vibe_change: true
-- id: '1786309430020'
-  alias: X Light Scroll Button
-  description: Controls X Light through a middleman template light when using the
-    ikea BILRESA scrollbutton
-  use_blueprint:
-    path: custom/ikea-bilresa-scroll-wheel-kelvin.yaml
-    input:
-      controller_device: 8acd1351864ee2c2bdeb153046c1315e
-      scroll_target: light.x_light
-      color_temp_target: light.x_light
-      scroll_mode_helper: input_select.x_light_scroll_mode
-      button_on_double:
-      - delay:
-          hours: 0
-          minutes: 0
-          seconds: 0
-          milliseconds: 1
-      button_off_double:
-      - delay:
-          hours: 0
-          minutes: 0
-          seconds: 0
-          milliseconds: 1
 - id: '1786309673750'
   alias: Seb Light Scroll Button
-  description: Controls Seb Light through a middleman template light when using the
-    ikea BILRESA scrollbutton
+  description: Controls Seb Light when using the ikea BILRESA scrollbutton
   use_blueprint:
-    path: custom/ikea-bilresa-scroll-wheel-kelvin.yaml
+    path: custom/ikea-bilresa-scroll-wheel-kelvin-v2.yaml
     input:
+      warmth_min_kelvin: 2200
       controller_device: 9976b5736cb213ed683d0ca3efeeaa61
       scroll_target: light.seb_lights
-      color_temp_target: light.seb_lights
-      scroll_mode_helper: input_select.seb_lights_scroll_mode
-      button_on_double:
-      - delay:
-          hours: 0
-          minutes: 0
-          seconds: 0
-          milliseconds: 1
-      button_off_double:
-      - delay:
-          hours: 0
-          minutes: 0
-          seconds: 0
-          milliseconds: 1
+      hue_select_helper: input_boolean.seb_lights_hue_select
 - id: '1786309783553'
   alias: Jungle Lights Scroll Button
-  description: Controls Jungle Lights through a middleman template light when using
-    the ikea BILRESA scrollbutton
+  description: Controls Jungle Lights when using the ikea BILRESA scrollbutton
   use_blueprint:
-    path: custom/ikea-bilresa-scroll-wheel-kelvin.yaml
+    path: custom/ikea-bilresa-scroll-wheel-kelvin-v2.yaml
     input:
       controller_device: 02033a5d4d94441fdff63a2b223adddc
       scroll_target: light.jungle_main_lights
-      color_temp_target: light.jungle_main_lights
-      scroll_mode_helper: input_select.jungle_lights_scroll_mode
-      button_on_double:
-      - delay:
-          hours: 0
-          minutes: 0
-          seconds: 0
-          milliseconds: 1
-      button_off_double:
-      - delay:
-          hours: 0
-          minutes: 0
-          seconds: 0
-          milliseconds: 1
-      button_off_short: []
+      warmth_min_kelvin: 2200
+      warmth_max_kelvin: 6535
+      color_cycle_target: light.jungle_ceiling_light
+      hue_select_helper: input_boolean.jungle_light_hue_select
 - id: '1786368587259'
   alias: Kitchen Light Buttons
   description: Maps buttons (2 buttons) to control the lights in the kitchen.
@@ -2248,28 +2221,51 @@
       data: {}
   mode: single
 - id: '1786518946352'
-  alias: Adjust Jungle Target Volume Based on Vibe Mode
-  description: Adjusts Jungle Target Volume Based on current Vibe Mode. Can be triggered
-    manually to restore the correct target volume.
+  alias: Adjust Jungle Target Volume
+  description: Adjusts Jungle Target Volume Based on current Vibe Mode and other helpers.
+    Can be triggered manually to restore the correct target volume.
   triggers:
   - trigger: state
     entity_id: input_select.vibe_mode
+  - trigger: state
+    entity_id:
+    - input_boolean.thunderstorm_playing
+    to:
+    - 'on'
+    - 'off'
   conditions: []
   actions:
-  - variables:
-      vibe_targets:
-        Normal: 0.45
-        Movie: 0.35
-        Cozy Nook: 0.35
-        Sauna: 0.45
-        Party: 0.5
-        Maintenance: 0
-        Board Games: 0.45
-  - action: input_number.set_value
-    target:
-      entity_id: input_number.jungle_target_volume
-    data:
-      value: '{{ vibe_targets.get(trigger.to_state.state, 0.5) }}'
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.thunderstorm_playing
+        state: 'on'
+      sequence:
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.jungle_target_volume
+        data:
+          value: 0.7
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.thunderstorm_playing
+        state: 'off'
+      sequence:
+      - variables:
+          vibe_targets:
+            Normal: 0.45
+            Movie: 0.35
+            Cozy Nook: 0.35
+            Sauna: 0.45
+            Party: 0.5
+            Maintenance: 0
+            Board Games: 0.45
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.jungle_target_volume
+        data:
+          value: '{{ vibe_targets.get(states(''input_select.vibe_mode''), 0.5) | float
+            }}'
   mode: single
 - id: '1786607665342'
   alias: Reset Vibe Mode in the Morning
@@ -2308,7 +2304,7 @@
       option: Normal
   mode: single
 - id: '1786652576775'
-  alias: X Light Scholl Button v2
+  alias: X Light Scroll Button
   description: Controls X Light when using the ikea BILRESA scrollbutton
   use_blueprint:
     path: custom/ikea-bilresa-scroll-wheel-kelvin-v2.yaml
