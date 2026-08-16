@@ -171,8 +171,13 @@
       - condition: trigger
         id:
         - secondary
-      sequence: []
-  mode: single
+      sequence:
+      - action: script.jungle_easter_egg_selector
+        metadata: {}
+        data:
+          trigger_type: admin
+  mode: queued
+  max: 5
 - id: '1774198810880'
   alias: Hallway Light Buttons
   description: Maps IKEA SOMRIG buttons (2 buttons) to control the lights in the hallway.
@@ -377,8 +382,50 @@
     - conditions:
       - condition: trigger
         id:
+        - 1_double
+      sequence:
+      - action: light.toggle
+        metadata: {}
+        target:
+          entity_id: light.couch_light
+        data: {}
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 0
+          milliseconds: 300
+      - action: light.toggle
+        metadata: {}
+        target:
+          entity_id: light.couch_light
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
         - 2_single
       sequence:
+      - action: light.toggle
+        metadata: {}
+        target:
+          entity_id:
+          - light.table_light
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - 2_double
+      sequence:
+      - action: light.toggle
+        metadata: {}
+        target:
+          entity_id:
+          - light.table_light
+        data: {}
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 0
+          milliseconds: 300
       - action: light.toggle
         metadata: {}
         target:
@@ -731,7 +778,7 @@
   actions:
   - if:
     - condition: state
-      entity_id: binary_sensor.jungle_presence
+      entity_id: input_boolean.jungle_occupancy
       state:
       - 'off'
     - condition: not
@@ -741,11 +788,13 @@
         state:
         - unavailable
     then:
-    - action: media_player.volume_set
+    - action: script.turn_on
       target:
-        entity_id: media_player.janitor_primary
+        entity_id: script.jungle_audio_controller
       data:
-        volume_level: 0
+        variables:
+          action: stop
+          category: ambient
     - action: input_boolean.turn_off
       metadata: {}
       target:
@@ -773,17 +822,16 @@
         data: {}
     - conditions:
       - condition: state
-        entity_id: input_boolean.kitchen_light_timer_active
+        entity_id: input_boolean.kitchen_lights_timer_active
         state:
         - 'on'
       - condition: time
-        after: input_datetime.kitchen_light_manual_expiration
+        after: input_datetime.kitchen_lights_manual_expiration
       sequence:
       - action: input_boolean.turn_off
         metadata: {}
         target:
-          entity_id:
-          - input_boolean.kitchen_light_timer_active
+          entity_id: input_boolean.kitchen_lights_timer_active
         data: {}
       - action: input_boolean.turn_on
         metadata: {}
@@ -921,59 +969,54 @@
           entity_id: input_boolean.toilet_sink_light_auto_mode
         data: {}
 - id: '1782341081247'
-  alias: Jungle Sound
-  description: Controls primary and secondary audiostream based on bathroom presence
-    and time of day.
+  alias: Jungle Ambient Handler
+  description: Controls ambient soundtrack based on bathroom occupancy and time of
+    day.
   triggers:
   - trigger: state
     entity_id:
-    - binary_sensor.jungle_presence
-    to: 'on'
+    - input_boolean.jungle_occupancy
     id: room_entered
-  - trigger: state
-    entity_id:
-    - binary_sensor.jungle_presence
-    to: 'off'
-    for:
-      seconds: 2
-    id: room_left
-  - trigger: state
-    entity_id:
-    - binary_sensor.jungle_toilet_presence
-    to: 'on'
-    id: toilet_occupied
-  - trigger: state
-    entity_id:
-    - binary_sensor.jungle_toilet_presence
-    to: 'off'
-    id: toilet_vacant
-  - trigger: state
-    entity_id:
-    - binary_sensor.jungle_shower_presence
     to:
     - 'on'
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 20
-    id: shower_occupied
   - trigger: state
     entity_id:
-    - binary_sensor.jungle_shower_presence
+    - input_boolean.jungle_occupancy
     to:
     - 'off'
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 5
-    id: shower_vacant
+    id: room_left
   - trigger: state
     entity_id: input_select.time_of_day_mode
     id: time_changed
+  - trigger: state
+    entity_id:
+    - input_boolean.thunderstorm_playing
+    to:
+    - 'on'
+    id: start thunderstorm
+  - trigger: state
+    entity_id:
+    - input_boolean.thunderstorm_playing
+    to:
+    - 'off'
+    id: end thunderstorm
   conditions:
-  - condition: state
-    entity_id: input_boolean.jungle_music
-    state: 'on'
+  - condition: or
+    conditions:
+    - condition: and
+      conditions:
+      - condition: state
+        entity_id: input_boolean.jungle_music
+        state: 'on'
+      - condition: trigger
+        id:
+        - room_entered
+        - time_changed
+        - start thunderstorm
+    - condition: trigger
+      id:
+      - room_left
+      - end thunderstorm
   actions:
   - variables:
       ambient_id: '{% set mode = states(''input_select.time_of_day_mode'') %} {% if
@@ -1000,6 +1043,10 @@
       - condition: trigger
         id:
         - time_changed
+      - condition: state
+        entity_id: input_boolean.thunderstorm_playing
+        state:
+        - 'off'
       sequence:
       - if:
         - condition: state
@@ -1027,38 +1074,15 @@
               volume_ratio: 0
     - conditions:
       - condition: trigger
-        id: toilet_occupied
-      - condition: state
-        entity_id: input_boolean.jungle_easter_egg_played
-        state: 'off'
-      sequence:
-      - action: script.turn_on
-        target:
-          entity_id: script.jungle_audio_controller
-        data:
-          variables:
-            action: play
-            category: easter_egg
-            sound_id: Terraria Jungle
-            volume_ratio: 0.5
-      - action: input_boolean.turn_on
-        target:
-          entity_id: input_boolean.jungle_easter_egg_played
-    - conditions:
-      - condition: trigger
         id:
-        - shower_occupied
-      - condition: state
-        entity_id: input_boolean.enable_thunderstorm
-        state:
-        - 'on'
+        - start thunderstorm
       sequence:
-      - action: input_number.set_value
+      - action: automation.trigger
         metadata: {}
         target:
-          entity_id: input_number.jungle_target_volume
+          entity_id: automation.adjust_jungle_target_volume
         data:
-          value: 0.7
+          skip_condition: true
       - action: script.turn_on
         target:
           entity_id: script.jungle_audio_controller
@@ -1070,23 +1094,19 @@
             category: ambient
             sound_id: '{{ states(''input_text.jungle_ambient_sound'') | replace(''
               Rain'', '''') ~ '' Rain'' }}'
-      - action: input_boolean.turn_on
-        metadata: {}
-        target:
-          entity_id: input_boolean.thunderstorm_playing
-        data: {}
       - action: script.turn_on
         target:
           entity_id: script.play_thunderstorm
+        data: {}
     - conditions:
       - condition: trigger
         id:
-        - shower_vacant
+        - end thunderstorm
       sequence:
       - action: automation.trigger
         metadata: {}
         target:
-          entity_id: automation.adjust_jungle_target_volume_based_on_vibe_mode
+          entity_id: automation.adjust_jungle_target_volume
         data:
           skip_condition: true
       - action: script.turn_on
@@ -1101,22 +1121,6 @@
             category: ambient
             sound_id: '{{ states(''input_text.jungle_ambient_sound'') | replace(''
               Rain'', '''') }}'
-      - action: input_boolean.turn_off
-        metadata: {}
-        target:
-          entity_id: input_boolean.thunderstorm_playing
-        data: {}
-    - conditions:
-      - condition: trigger
-        id: toilet_vacant
-      sequence:
-      - action: script.turn_on
-        target:
-          entity_id: script.jungle_audio_controller
-        data:
-          variables:
-            action: stop
-            category: easter_egg
     - conditions:
       - condition: trigger
         id: room_left
@@ -1131,8 +1135,18 @@
           variables:
             action: stop
             category: ambient
+      - action: script.turn_on
+        target:
+          entity_id: script.jungle_audio_controller
+        data:
+          variables:
+            action: play
+            category: ambient
+            sound_id: '{{ ambient_id }}'
+            volume_ratio: 0
+            skip_fade_in: true
   mode: queued
-  max: 5
+  max: 10
 - id: '1784909281271'
   alias: Janitor Speakers Self-Heal (SSH Restart + MA Reload)
   description: ' If speakers malfunction, tries to restore bathroom speaker system
@@ -1241,9 +1255,27 @@
           message: "\U0001F6D2 {{ repeat.item.summary }}"
           data:
             group: Shopping List Reminder
+            tag: '{{ repeat.item.summary }}'
             actions:
             - action: MARK_DONE_{{ repeat.item.summary }}
               title: Mark Done
+  - wait_for_trigger:
+    - trigger: state
+      entity_id: person.aksu
+      from:
+      - Main Grocery Store
+      - 24h Store
+      - Nearby Shopping Center
+      for:
+        minutes: 3
+  - repeat:
+      for_each: '{{ my_shopping_list[''todo.shopping_list''][''items''] }}'
+      sequence:
+      - action: notify.mobile_app_x_phone
+        data:
+          message: clear_notification
+          data:
+            tag: '{{ repeat.item.summary }}'
   mode: single
 - id: '1785603288738'
   alias: Daily config export to Git
@@ -1268,12 +1300,11 @@
   - condition: template
     value_template: '{{ trigger.event.data.action.startswith(''MARK_DONE_'') }}'
   actions:
-  - action: todo.update_item
+  - action: todo.remove_item
     target:
       entity_id: todo.shopping_list
     data:
       item: '{{ trigger.event.data.action | replace(''MARK_DONE_'', '''') }}'
-      status: completed
   mode: parallel
 - id: '1786128416779'
   alias: Monkey Light Automation
@@ -1286,7 +1317,7 @@
         minutes: 0
         seconds: 0
       motion_sensor:
-      - binary_sensor.jungle_presence
+      - input_boolean.jungle_occupancy
       target_light: light.monkey_light
       tod_helper: input_select.time_of_day_mode
       trigger_on_vibe_change: true
@@ -1317,7 +1348,7 @@
     path: custom/vibe_motion_lighting.yaml
     input:
       motion_sensor:
-      - binary_sensor.jungle_presence
+      - input_boolean.jungle_occupancy
       target_light: light.jungle_ceiling_light
       tod_helper: input_select.time_of_day_mode
       no_motion_timeout:
@@ -1334,7 +1365,7 @@
     path: custom/vibe_motion_lighting.yaml
     input:
       motion_sensor:
-      - binary_sensor.jungle_sink_presence
+      - input_boolean.jungle_sink_occupancy
       target_light: light.jungle_sink_light
       tod_helper: input_select.time_of_day_mode
       no_motion_timeout: 2
@@ -1378,46 +1409,278 @@
       trigger_on_maintenance: true
       auto_mode_helper: input_boolean.toilet_sink_light_auto_mode
 - id: '1786134612900'
-  alias: Toilet Occupancy Helper
-  description: Combines two sensors into one helper boolean to keep track of toilet
-    occupancy
+  alias: Occupancy Helpers
+  description: Combines different sensors to keep track of occupancies around the
+    house
   triggers:
+  - trigger: occupancy.detected
+    target:
+      device_id: f17a1598e6d915bce0f8a60452f0e8c0
+    options:
+      behavior: each
+    id: kitchen detected
+  - trigger: occupancy.cleared
+    target:
+      device_id: f17a1598e6d915bce0f8a60452f0e8c0
+    options:
+      behavior: each
+    id: kitchen cleared
+  - trigger: occupancy.detected
+    target:
+      device_id: 1f77ec67617a8ffa5816cd79982d271e
+    options:
+      behavior: each
+    id: jungle door detected
+  - trigger: occupancy.cleared
+    target:
+      device_id: 1f77ec67617a8ffa5816cd79982d271e
+    options:
+      behavior: each
+    id: jungle door cleared
+  - trigger: motion.detected
+    target:
+      entity_id: binary_sensor.hallway_hallway_motion_sensor_2_motion
+    options:
+      behavior: each
+      for: 00:00:00
+    id: hallway detected
+  - trigger: motion.cleared
+    target:
+      entity_id: binary_sensor.hallway_hallway_motion_sensor_2_motion
+    options:
+      behavior: each
+      for: 00:00:00
+    id: hallway cleared
   - trigger: mqtt
     options:
       topic: zigbee2mqtt/Vibration Sensor
       value_template: '{{ value_json.action }}'
       payload: movement
+    id: toilet door
   - trigger: occupancy.detected
     target:
       entity_id: binary_sensor.toilet_motion_sensor_occupancy
     options:
       behavior: each
       for: 00:00:00
+    id: toilet detected
   - trigger: occupancy.cleared
     target:
       entity_id: binary_sensor.toilet_motion_sensor_occupancy
     options:
       for: 00:00:00
-    id: occupancy cleared
+    id: toilet cleared
+  - trigger: occupancy.detected
+    target:
+      entity_id: binary_sensor.jungle_presence
+    options:
+      for: 00:00:00
+    id: jungle detected
+  - trigger: occupancy.cleared
+    target:
+      entity_id: binary_sensor.jungle_presence
+    options:
+      for: 00:00:00
+    id: jungle cleared
+  - trigger: occupancy.detected
+    target:
+      entity_id: binary_sensor.jungle_sink_presence
+    options:
+      for: 00:00:00
+    id: jungle sink detected
+  - trigger: occupancy.cleared
+    target:
+      entity_id: binary_sensor.jungle_sink_presence
+    options:
+      for: 00:00:00
+    id: jungle sink cleared
+  - trigger: occupancy.detected
+    target:
+      entity_id: binary_sensor.jungle_toilet_presence
+    options:
+      for: 00:00:00
+    id: jungle toilet detected
+  - trigger: occupancy.cleared
+    target:
+      entity_id: binary_sensor.jungle_toilet_presence
+    options:
+      for: 00:00:00
+    id: jungle toilet cleared
+  - trigger: occupancy.detected
+    target:
+      entity_id: binary_sensor.jungle_shower_presence
+    options:
+      for: 00:00:00
+    id: jungle shower detected
+  - trigger: occupancy.cleared
+    target:
+      entity_id: binary_sensor.jungle_shower_presence
+    options:
+      for: 00:00:00
+    id: jungle shower cleared
   conditions: []
   actions:
-  - if:
-    - condition: trigger
-      id:
-      - occupancy cleared
-    then:
-    - action: input_boolean.turn_off
-      metadata: {}
-      target:
-        entity_id: input_boolean.toilet_occupancy
-      data: {}
-    else:
-    - action: input_boolean.turn_on
-      metadata: {}
-      target:
-        entity_id: input_boolean.toilet_occupancy
-      data: {}
-  mode: single
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - toilet detected
+        - toilet door
+      sequence:
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.toilet_occupancy
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - toilet cleared
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id: input_boolean.toilet_occupancy
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - kitchen detected
+      sequence:
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.kitchen_occupancy
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - kitchen cleared
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id: input_boolean.kitchen_occupancy
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - hallway detected
+      sequence:
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.hallway_occupancy
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - hallway cleared
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id: input_boolean.hallway_occupancy
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - jungle detected
+        - jungle door detected
+      sequence:
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.jungle_occupancy
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - jungle cleared
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id: input_boolean.jungle_occupancy
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - jungle door cleared
+      - condition: occupancy.is_not_detected
+        target:
+          entity_id: binary_sensor.jungle_presence
+        options:
+          behavior: any
+          for: 00:00:00
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id: input_boolean.jungle_occupancy
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - jungle sink detected
+      sequence:
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.jungle_sink_occupancy
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - jungle sink cleared
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id: input_boolean.jungle_sink_occupancy
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - jungle toilet detected
+      sequence:
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.jungle_toilet_occupancy
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - jungle toilet cleared
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id: input_boolean.jungle_toilet_occupancy
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - jungle shower detected
+      sequence:
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.jungle_shower_occupancy
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - jungle shower cleared
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id: input_boolean.jungle_shower_occupancy
+        data: {}
+  mode: parallel
+  max: 10
 - id: '1786177668996'
   alias: Hallway Lights Reset to Auto
   description: Resets the Lighting Mode helper of Hallway Lights to Auto after manual
@@ -1509,7 +1772,8 @@
         hours: 0
         minutes: 30
         seconds: 0
-      motion_sensor: []
+      motion_sensor:
+      - input_boolean.x_room_occupancy
       auto_mode_helper: input_boolean.x_light_auto_mode
 - id: '1786178150550'
   alias: X Light Reset to Auto
@@ -1591,9 +1855,9 @@
         data:
           mode: Infinite
           force: false
-          auto_mode_helper: input_boolean.kitchen_light_timer_active
-          timer_active_helper: input_boolean.kitchen_light_timer_active
-          expiration_helper: input_datetime.kitchen_light_manual_expiration
+          auto_mode_helper: input_boolean.kitchen_lights_auto_mode
+          timer_active_helper: input_boolean.kitchen_lights_timer_active
+          expiration_helper: input_datetime.kitchen_lights_manual_expiration
       - action: script.set_manual_mode_timer
         metadata: {}
         data:
@@ -1642,12 +1906,12 @@
         target:
           entity_id:
           - input_boolean.hallway_lights_timer_active
-          - input_boolean.kitchen_light_timer_active
           - input_boolean.monkey_light_timer_active
           - input_boolean.jungle_ceiling_light_timer_active
           - input_boolean.jungle_sink_light_timer_active
           - input_boolean.toilet_ceiling_light_timer_active
           - input_boolean.toilet_sink_light_timer_active
+          - input_boolean.kitchen_lights_timer_active
   mode: single
 - id: '1786183660188'
   alias: Small Light Automation
@@ -2041,8 +2305,8 @@
       light_entity: light.kitchen_lights
       automation_entity: automation.kitchen_lights_automation
       auto_mode_helper: input_boolean.kitchen_lights_auto_mode
-      expiration_helper: input_datetime.kitchen_light_manual_expiration
-      timer_active_helper: input_boolean.kitchen_light_timer_active
+      expiration_helper: input_datetime.kitchen_lights_manual_expiration
+      timer_active_helper: input_boolean.kitchen_lights_timer_active
 - id: '1786372558766'
   alias: Kitchen Lights Automation
   description: Controls the lights in the kitchen based on a motion sensor.
@@ -2050,7 +2314,7 @@
     path: custom/vibe_motion_lighting.yaml
     input:
       motion_sensor:
-      - binary_sensor.kitchen_motion_sensor_occupancy
+      - input_boolean.kitchen_occupancy
       target_light: light.kitchen_lights
       tod_helper: input_select.time_of_day_mode
       no_motion_timeout:
@@ -2087,138 +2351,133 @@
   triggers:
   - trigger: state
     entity_id:
-    - binary_sensor.jungle_presence
-    to: 'on'
-    id: room_detected
-  - trigger: state
-    entity_id:
-    - binary_sensor.jungle_toilet_presence
-    to: 'on'
-    id: toilet_detected
-  - trigger: state
-    entity_id:
-    - binary_sensor.jungle_toilet_presence
-    to: 'off'
-    id: toilet_clear
-  - trigger: state
-    entity_id:
-    - binary_sensor.jungle_shower_presence
+    - input_boolean.jungle_toilet_occupancy
+    id: toilet
     to:
     - 'on'
+  - trigger: state
+    entity_id:
+    - input_boolean.jungle_shower_occupancy
     for:
       hours: 0
       minutes: 0
       seconds: 0
-    id: shower_detected
+    id: shower
+    to:
+    - 'on'
   - trigger: state
     entity_id:
-    - binary_sensor.jungle_shower_presence
+    - input_boolean.jungle_shower_occupancy
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 20
+    id: shower long
+    to:
+    - 'on'
+  - trigger: state
+    entity_id:
+    - input_boolean.jungle_shower_occupancy
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 2
+    id: shower cleared
     to:
     - 'off'
+  - trigger: state
+    entity_id:
+    - input_boolean.jungle_sink_occupancy
     for:
       hours: 0
       minutes: 0
       seconds: 0
-    id: shower_clear
-  - trigger: state
-    entity_id:
-    - binary_sensor.jungle_door_area_presence
+    id: sink
     to:
     - 'on'
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 0
-    id: door_detected
   - trigger: state
     entity_id:
-    - binary_sensor.jungle_door_area_presence
+    - light.jungle_ceiling_light
     to:
     - 'on'
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 0
-    id: door_detected
-  - trigger: state
-    entity_id:
-    - binary_sensor.jungle_sink_presence
-    to:
-    - 'on'
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 0
-    id: sink_detected
-  - trigger: state
-    entity_id:
-    - binary_sensor.jungle_sink_presence
-    to:
-    - 'off'
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 0
-    id: sink_clear
-  conditions:
-  - condition: occupancy.is_detected
-    target:
-      entity_id: binary_sensor.jungle_presence
-    options:
-      behavior: any
-      for: 00:00:00
-  - condition: state
-    entity_id: input_boolean.thunderstorm_playing
-    state:
-    - 'off'
-  actions:
-  - if:
-    - condition: trigger
-      id:
-      - sink_detected
-    then: []
-  - delay:
-      hours: 0
-      minutes: 0
-      seconds: 1
-      milliseconds: 0
-  mode: single
-- id: '1786456042655'
-  alias: Hallway Occupancy Helper
-  description: Manages helper boolean to keep track of hallway occupancy
-  triggers:
-  - trigger: motion.detected
-    target:
-      entity_id: binary_sensor.hallway_hallway_motion_sensor_2_motion
-    options:
-      behavior: each
-      for: 00:00:00
-    id: detected
-  - trigger: motion.cleared
-    target:
-      entity_id: binary_sensor.hallway_hallway_motion_sensor_2_motion
-    options:
-      behavior: each
-      for: 00:00:00
-    id: cleared
+    id: light on
   conditions: []
   actions:
-  - if:
-    - condition: trigger
-      id:
-      - cleared
-    then:
-    - action: input_boolean.turn_off
-      metadata: {}
-      target:
-        entity_id: input_boolean.hallway_occupancy
-      data: {}
-    else:
-    - action: input_boolean.turn_on
-      metadata: {}
-      target:
-        entity_id: input_boolean.hallway_occupancy
-      data: {}
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - toilet
+      sequence:
+      - action: script.turn_on
+        metadata: {}
+        target:
+          entity_id: script.jungle_easter_egg_selector
+        data:
+          variables:
+            trigger_type: toilet
+    - conditions:
+      - condition: trigger
+        id:
+        - shower
+      sequence:
+      - action: script.turn_on
+        metadata: {}
+        target:
+          entity_id: script.jungle_easter_egg_selector
+        data:
+          variables:
+            trigger_type: shower
+    - conditions:
+      - condition: trigger
+        id:
+        - shower long
+      sequence:
+      - action: script.turn_on
+        metadata: {}
+        target:
+          entity_id: script.jungle_easter_egg_selector
+        data:
+          variables:
+            trigger_type: shower_long
+    - conditions:
+      - condition: trigger
+        id:
+        - sink
+      sequence:
+      - action: script.turn_on
+        metadata: {}
+        target:
+          entity_id: script.jungle_easter_egg_selector
+        data:
+          variables:
+            trigger_type: sink
+    - conditions:
+      - condition: trigger
+        id:
+        - light on
+      sequence:
+      - action: script.turn_on
+        metadata: {}
+        target:
+          entity_id: script.jungle_easter_egg_selector
+        data:
+          variables:
+            trigger_type: scroll_button
+    - conditions:
+      - condition: trigger
+        id:
+        - shower cleared
+      - condition: state
+        entity_id: input_boolean.thunderstorm_playing
+        state:
+        - 'on'
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        target:
+          entity_id: input_boolean.thunderstorm_playing
+        data: {}
   mode: single
 - id: '1786518946352'
   alias: Adjust Jungle Target Volume
@@ -2245,7 +2504,7 @@
         target:
           entity_id: input_number.jungle_target_volume
         data:
-          value: 0.7
+          value: 0.95
     - conditions:
       - condition: state
         entity_id: input_boolean.thunderstorm_playing
@@ -2253,13 +2512,13 @@
       sequence:
       - variables:
           vibe_targets:
-            Normal: 0.45
-            Movie: 0.35
-            Cozy Nook: 0.35
-            Sauna: 0.45
-            Party: 0.5
+            Normal: 0.7
+            Movie: 0.5
+            Cozy Nook: 0.5
+            Sauna: 0.65
+            Party: 0.7
             Maintenance: 0
-            Board Games: 0.45
+            Board Games: 0.7
       - action: input_number.set_value
         target:
           entity_id: input_number.jungle_target_volume
