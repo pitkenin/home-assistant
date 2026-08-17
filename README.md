@@ -14,11 +14,11 @@ But first, here's the interesting part:
 
 <!-- START_AI_SUMMARY -->
 
-Home is the home I've been building since early 2026, one room and one small fix at a time. It's a bathroom that turns into a jungle, lights that know when to get out of your way, and a phone that quietly remembers the things I'd otherwise forget. Underneath all of it sit a handful of automations that watch the watchers, so the house keeps behaving even when I'm not paying attention.
+Home is the space I've been building since early 2026, one room and one small fix at a time. It's a bathroom that turns into a jungle, lights that know when to get out of your way, and a phone that quietly remembers the things I'd otherwise forget. Underneath it all sit a handful of automations that watch the watchers, so the house keeps behaving even when I'm not paying attention.
 
 ### 🌴 Welcome to the Jungle
 
-Walking into the bathroom drops you straight into the Jungle: vines climb the walls, birds perch on the shelves, and a monkey hangs from the ceiling holding a lightbulb that glows warm the moment you step in. A beat later the room fills with sound, spilling out of the ceiling speakers, run off a Raspberry Pi through Music Assistant. The soundtrack shifts with the time of day, settling into crickets late at night and bringing the birds back through the day. Every so often, rarely enough that it still catches you off guard, a hidden little melody plays under the ambient sound. Step up to the sink to wash your hands and the mirror cabinet light above it switches on by itself, sensing you're right there.
+Walking into the bathroom drops you straight into the Jungle: vines climb the walls, birds perch on the shelves, and a monkey hangs from the ceiling holding a lightbulb that glows warm the moment you step in. A beat later the room fills with sound, spilling out of the ceiling speakers and shifting with the time of day, settling into crickets late at night and bringing the birds back through the day. Every so often, rarely enough that it still catches you off guard, a hidden little melody plays under the ambient sound. Step up to the sink to wash your hands and the mirror cabinet light above it switches on by itself, sensing you're right there.
 
 ![🌴 Welcome to the Jungle](images/welcome-to-the-jungle.jpg)
 
@@ -30,11 +30,11 @@ I couldn't stop at automating the home itself; I wanted my daily life outside it
 
 ### 💡 Automatic lights, until you say otherwise
 
-Motion handles most of the lighting around the house — the hallway, my bedroom, the bathroom, and the toilet all light themselves as you walk in. But automatic lighting stops feeling clever the moment it does something you didn't ask for, so every one of those rooms sits right next to a wall button too. A press takes that room off automatic and does exactly what you asked instead, whether that means holding the lights off or locking them on bright. The override then quietly expires on its own after a couple of hours, or resets the next morning, and the room slides back onto automatic without me ever having to remember to switch it back myself. The automation never fights you; it just steps aside when you want it to, and steps back in later, on its own.
+Motion handles most of the lighting around the house — the hallway, my bedroom, the Jungle, and the toilet all light themselves as you walk in. But automatic lighting stops feeling clever the moment it does something you didn't ask for, so every one of those rooms sits right next to a wall button too. A press takes that room off automatic and does exactly what you asked instead, whether that means holding the lights off or locking them on bright. The override then quietly expires on its own after a while, or resets the next morning, and the room slides back onto automatic without me ever having to remember to switch it back myself. The automation never fights you; it just steps aside when you want it to, and steps back in later, on its own.
 
 ### 🌓 Time of Day and Vibe Modes
 
-Two modes sit underneath almost everything else in the house, read by lighting, sound, and notifications alike. Time of Day moves through Morning, Day, Evening, and Night on its own schedule, and at night the house leans toward fewer, warmer-toned lights rather than the plain white of daytime. Vibe Mode sits above it, set by hand for a particular atmosphere, and it usually wins the argument when the two disagree. Switch on Maintenance and the lights stay on and the sound stays off until I switch it back, useful for cleaning or fixing things without the house trying to help. Switch on Movie and the areas near the living room stay darker, so nothing spills onto the screen while someone's watching.
+Two modes sit underneath almost everything else in the house, read by lighting, sound, and notifications alike. Time of Day moves through Morning, Day, Evening, and Night on its own schedule, and at night the house leans toward fewer, warmer-toned lights rather than the plain white of daytime. Vibe Mode sits above it, set by hand for a particular atmosphere, and it usually wins the argument when the two disagree. Switch on Maintenance and the lights stay on and the sound stays off until I switch it back myself, useful for cleaning or fixing things without the house trying to help. Switch on Movie and the areas near the living room stay darker, so nothing spills onto the screen while someone's watching.
 
 ### 🔧 When something breaks
 

@@ -1156,8 +1156,12 @@
     entity_id:
     - media_player.janitor_primary
     - media_player.janitor_secondary
-    to: unavailable
-    for: 00:03:00
+    to:
+    - unavailable
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 30
     id: went_unavailable
   - trigger: time_pattern
     minutes: /5
@@ -1167,34 +1171,42 @@
     conditions:
     - condition: state
       entity_id: media_player.janitor_primary
-      state: unavailable
-      for: 00:03:00
+      state:
+      - unavailable
     - condition: state
       entity_id: media_player.janitor_secondary
-      state: unavailable
-      for: 00:03:00
+      state:
+      - unavailable
   actions:
-  - action: ticker.notify
-    data:
-      actions: category_default
-      category: X Notifications
-      title: PROBLEM
-      message: Janitor speakers are malfunctioning.
   - if:
-    - condition: state
-      entity_id: media_player.janitor_primary
-      state: unavailable
+    - condition: trigger
+      id: just_recovered
     then:
-    - action: shell_command.reboot_janitor_speaker
-  - if:
-    - condition: state
-      entity_id: media_player.janitor_secondary
-      state: unavailable
-    then:
-    - action: shell_command.reboot_janitor_speaker_secondary
-  - action: homeassistant.reload_config_entry
-    target:
-      entity_id: media_player.janitor_primary
+    - action: homeassistant.reload_config_entry
+      target:
+        entity_id: media_player.janitor_primary
+    else:
+    - action: ticker.notify
+      data:
+        actions: category_default
+        category: X Notifications
+        title: PROBLEM
+        message: Janitor speakers are malfunctioning.
+    - if:
+      - condition: state
+        entity_id: media_player.janitor_primary
+        state: unavailable
+      then:
+      - action: shell_command.reboot_janitor_speaker
+    - if:
+      - condition: state
+        entity_id: media_player.janitor_secondary
+        state: unavailable
+      then:
+      - action: shell_command.reboot_janitor_speaker_secondary
+    - action: homeassistant.reload_config_entry
+      target:
+        entity_id: media_player.janitor_primary
   mode: queued
   max: 5
 - id: '1785082621461'
@@ -2478,7 +2490,8 @@
         target:
           entity_id: input_boolean.thunderstorm_playing
         data: {}
-  mode: single
+  mode: queued
+  max: 10
 - id: '1786518946352'
   alias: Adjust Jungle Target Volume
   description: Adjusts Jungle Target Volume Based on current Vibe Mode and other helpers.
