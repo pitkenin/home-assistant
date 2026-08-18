@@ -14,23 +14,23 @@ But first, here's the interesting part:
 
 <!-- START_AI_SUMMARY -->
 
-Home is the space I've been building since early 2026, one room and one small fix at a time. It's a bathroom that turns into a jungle, lights that know when to get out of your way, and a phone that quietly remembers the things I'd otherwise forget. Underneath it all sit a handful of automations that watch the watchers, so the house keeps behaving even when I'm not paying attention.
+Home is the space I've been building since early 2026, one room and one small fix at a time. It's a bathroom that turns into a jungle, lights that know when to get out of your way, and a phone that remembers the things I'd otherwise forget. Underneath it all sit a handful of automations that watch the watchers, so the house keeps behaving even when I'm not paying attention.
 
 ### 🌴 Welcome to the Jungle
 
-Walking into the bathroom drops you straight into the Jungle: vines climb the walls, birds perch on the shelves, and a monkey hangs from the ceiling holding a lightbulb that glows warm the moment you step in. A beat later the room fills with sound, spilling out of the ceiling speakers and shifting with the time of day, settling into crickets late at night and bringing the birds back through the day. Every so often, rarely enough that it still catches you off guard, a hidden little melody plays under the ambient sound. Step up to the sink to wash your hands and the mirror cabinet light above it switches on by itself, sensing you're right there.
+Walking into the bathroom drops you straight into the Jungle: vines climb the walls, birds perch on the shelves, and a monkey hangs from the ceiling holding a lightbulb that glows warm the moment you step in. A beat later the room fills with sound, spilling out of the ceiling speakers and shifting with the time of day, settling into crickets late at night and bringing the birds back through the day. Every so often, rarely enough that it still catches you off guard, a hidden little melody plays under the ambient soundtrack. Step up to the sink to wash your hands and the mirror cabinet light above it switches on by itself, sensing you're right there.
 
 ![🌴 Welcome to the Jungle](images/welcome-to-the-jungle.jpg)
 
 ### 🧠 Brain's Virtual Memory Extension
 
-I couldn't stop at automating the home itself; I wanted my daily life outside it handled too, so my phone became the messenger. Walk near a grocery store and it lists everything sitting on the shopping list, so I never stand in an aisle trying to remember what ran out. Finish a load of laundry — tracked by a smart plug watching the washing machine's power draw, since there's no sensor inside the machine itself — and it tells whoever started the wash that it's ready. When the printer's ink runs low it sends a notification that doesn't just disappear when swiped; it keeps quietly coming back until the level is back up. The whole idea is externalising my own memory, so I can move through the day a little more care-free.
+I couldn't stop at automating the home itself; I wanted my daily life outside it handled too, so my phone became the messenger. Walk near a grocery store and it lists everything sitting on the shopping list, so I never stand in an aisle trying to remember what ran out. Finish a load of laundry — tracked by a smart plug watching the washing machine's power draw, since there's no sensor inside the machine itself — and it tells whoever started the wash that it's ready. When the printer's ink runs low it sends a notification that doesn't just disappear when swiped; it keeps coming back until the level is back up. The whole idea is externalising my own memory, so I can move through the day a little more care-free.
 
 ![🧠 Brain's Virtual Memory Extension](images/brain-s-virtual-memory-extension.jpg)
 
 ### 💡 Automatic lights, until you say otherwise
 
-Motion handles most of the lighting around the house — the hallway, my bedroom, the Jungle, and the toilet all light themselves as you walk in. But automatic lighting stops feeling clever the moment it does something you didn't ask for, so every one of those rooms sits right next to a wall button too. A press takes that room off automatic and does exactly what you asked instead, whether that means holding the lights off or locking them on bright. The override then quietly expires on its own after a while, or resets the next morning, and the room slides back onto automatic without me ever having to remember to switch it back myself. The automation never fights you; it just steps aside when you want it to, and steps back in later, on its own.
+Motion handles most of the lighting around the house — the hallway, my bedroom, the Jungle, and the toilet all light themselves as you walk in. But automatic lighting stops feeling clever the moment it does something you didn't ask for, so every one of those rooms sits right next to a wall button too. A press takes that room off automatic and does exactly what you asked instead, whether that means holding the lights off or locking them on bright. The override then expires on its own after a while, or resets the next morning, and the room slides back onto automatic without me ever having to remember to switch it back myself. The automation never fights you; it just steps aside when you want it to, and steps back in later, on its own.
 
 ### 🌓 Time of Day and Vibe Modes
 

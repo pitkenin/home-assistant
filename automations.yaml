@@ -393,7 +393,8 @@
           hours: 0
           minutes: 0
           seconds: 0
-          milliseconds: 300
+          milliseconds: '{{ states(''input_number.manual_dimmer_delay'') | int(300)
+            }}'
       - action: light.toggle
         metadata: {}
         target:
@@ -425,7 +426,8 @@
           hours: 0
           minutes: 0
           seconds: 0
-          milliseconds: 300
+          milliseconds: '{{ states(''input_number.manual_dimmer_delay'') | int(300)
+            }}'
       - action: light.toggle
         metadata: {}
         target:
@@ -1530,6 +1532,15 @@
     options:
       for: 00:00:00
     id: jungle shower cleared
+  - trigger: occupancy.detected
+    target:
+      entity_id: binary_sensor.jungle_shower_presence
+    options:
+      for:
+        hours: 0
+        minutes: 0
+        seconds: 10
+    id: jungle shower long detected
   conditions: []
   actions:
   - choose:
@@ -1684,12 +1695,24 @@
     - conditions:
       - condition: trigger
         id:
+        - jungle shower long detected
+      sequence:
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id: input_boolean.shower_on
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
         - jungle shower cleared
       sequence:
       - action: input_boolean.turn_off
         metadata: {}
         target:
-          entity_id: input_boolean.jungle_shower_occupancy
+          entity_id:
+          - input_boolean.jungle_shower_occupancy
+          - input_boolean.shower_on
         data: {}
   mode: parallel
   max: 10
@@ -1816,6 +1839,9 @@
     id: Finish Maintenance
     from:
     - Maintenance
+  - trigger: state
+    entity_id:
+    - input_select.vibe_mode
   conditions: []
   actions:
   - alias: Start or Finish Maintenance
@@ -1924,6 +1950,72 @@
           - input_boolean.toilet_ceiling_light_timer_active
           - input_boolean.toilet_sink_light_timer_active
           - input_boolean.kitchen_lights_timer_active
+    - conditions:
+      - condition: state
+        entity_id: input_select.vibe_mode
+        state:
+        - Board Games
+      sequence:
+        action: script.turn_on
+        target:
+          entity_id: script.cycle_light_brightness
+        data:
+          variables:
+            target_light: light.table_light
+            target_brightness: Bright
+    - conditions:
+      - condition: state
+        entity_id: input_select.vibe_mode
+        state:
+        - Sauna
+        - Cozy Nook
+      sequence:
+      - if:
+        - condition: light.is_on
+          target:
+            entity_id: light.table_light
+          options:
+            behavior: any
+            for: 00:00:00
+        then:
+        - action: script.turn_on
+          target:
+            entity_id: script.cycle_light_brightness
+          data:
+            variables:
+              target_light: light.table_light
+              target_brightness: Dim
+      - if:
+        - condition: light.is_on
+          target:
+            entity_id: light.couch_light
+          options:
+            behavior: any
+            for: 00:00:00
+        then:
+        - action: script.turn_on
+          target:
+            entity_id: script.cycle_light_brightness
+          data:
+            variables:
+              target_light: light.couch_light
+              target_brightness: Dim
+    - conditions:
+      - condition: state
+        entity_id: input_select.vibe_mode
+        state:
+        - Movie
+      sequence:
+      - action: light.turn_off
+        metadata: {}
+        target:
+          entity_id: light.couch_light
+        data: {}
+      - action: light.turn_off
+        metadata: {}
+        target:
+          entity_id: light.table_light
+        data: {}
   mode: single
 - id: '1786183660188'
   alias: Small Light Automation
@@ -2379,7 +2471,7 @@
     - 'on'
   - trigger: state
     entity_id:
-    - input_boolean.jungle_shower_occupancy
+    - input_boolean.shower_on
     for:
       hours: 0
       minutes: 0
@@ -2389,11 +2481,7 @@
     - 'on'
   - trigger: state
     entity_id:
-    - input_boolean.jungle_shower_occupancy
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 2
+    - input_boolean.shower_on
     id: shower cleared
     to:
     - 'off'
@@ -2501,7 +2589,7 @@
     entity_id: input_select.vibe_mode
   - trigger: state
     entity_id:
-    - input_boolean.thunderstorm_playing
+    - input_boolean.shower_on
     to:
     - 'on'
     - 'off'
@@ -2510,8 +2598,9 @@
   - choose:
     - conditions:
       - condition: state
-        entity_id: input_boolean.thunderstorm_playing
-        state: 'on'
+        entity_id: input_boolean.shower_on
+        state:
+        - 'on'
       sequence:
       - action: input_number.set_value
         target:
@@ -2520,8 +2609,9 @@
           value: 0.95
     - conditions:
       - condition: state
-        entity_id: input_boolean.thunderstorm_playing
-        state: 'off'
+        entity_id: input_boolean.shower_on
+        state:
+        - 'off'
       sequence:
       - variables:
           vibe_targets:
@@ -2585,3 +2675,68 @@
       scroll_target: light.x_light
       warmth_min_kelvin: 2200
       hue_select_helper: input_boolean.x_light_hue_select
+- id: '1786956286788'
+  alias: Update Brightness Helper on Toggle
+  description: Keeps track of the light state machines with manual 3-step on/off toggle
+    dimmers
+  triggers:
+  - entity_id:
+    - light.couch_light
+    - light.table_light
+    from: 'off'
+    to: 'on'
+    trigger: state
+  actions:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ 196 <= time_off_ms <= 1753 }}'
+      sequence:
+      - action: input_select.select_option
+        target:
+          entity_id: '{{ brightness_select }}'
+        data:
+          option: '{% if current_state == ''Bright'' %} Normal {% elif current_state
+            == ''Normal'' %} Dim {% else %} Bright {% endif %}
+
+            '
+    - conditions:
+      - condition: template
+        value_template: '{{ 1754 <= time_off_ms <= 2130 }}'
+      sequence:
+      - action: input_select.select_option
+        target:
+          entity_id: '{{ brightness_select }}'
+        data:
+          option: '{% if current_state == ''Bright'' %} Normal {% else %} Bright {%
+            endif %}
+
+            '
+    - conditions:
+      - condition: template
+        value_template: '{{ time_off_ms > 2130 }}'
+      sequence:
+      - action: input_select.select_option
+        target:
+          entity_id: '{{ brightness_select }}'
+        data:
+          option: Bright
+  - if:
+    - condition: template
+      value_template: '{{ 2000 <= time_off_ms <= 2500 }}'
+    then:
+    - action: ticker.notify
+      metadata: {}
+      data:
+        category: X Notifications
+        message: 'Check brightness helper sync of living room lights '
+        title: ' '
+  mode: parallel
+  variables:
+    light_id: '{{ trigger.entity_id.split(''.'')[1] }}'
+    brightness_select: input_select.{{ light_id }}_brightness
+    current_state: '{{ states(brightness_select) }}'
+    time_off_ms: '{{ ((as_timestamp(trigger.to_state.last_changed, 0) - as_timestamp(trigger.from_state.last_changed,
+      0)) * 1000) | int(0) }}
+
+      '
