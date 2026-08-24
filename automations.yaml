@@ -2186,6 +2186,8 @@
         data:
           skip_condition: true
   mode: restart
+  trace:
+    stored_traces: 20
 - id: '1786368791890'
   alias: Toilet Light Buttons
   description: Maps buttons (2x2 buttons) to control the lights in the kitchen.

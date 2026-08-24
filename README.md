@@ -14,7 +14,7 @@ But first, here's the interesting part:
 
 <!-- START_AI_SUMMARY -->
 
-Home is the space I've been building since early 2026, one room and one small fix at a time. It's a bathroom that turns into a jungle, lights that know when to get out of your way, and a phone that remembers the things I'd otherwise forget. Underneath it all sit a handful of automations that watch the watchers, so the house keeps behaving even when I'm not paying attention.
+Home is the space I've been building since early 2026, one room and one small fix at a time. It's a bathroom that turns into a jungle, lights that know when to get out of your way, and a phone that remembers the things I'd otherwise forget. Underneath it all sits a handful of automations that watch the watchers, so the house keeps behaving even when I'm not paying attention.
 
 ### 🌴 Welcome to the Jungle
 
