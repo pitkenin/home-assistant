@@ -1180,35 +1180,30 @@
       state:
       - unavailable
   actions:
+  - action: homeassistant.reload_config_entry
+    target:
+      entity_id:
+      - media_player.janitor_primary
+      - media_player.janitor_secondary
+    data: {}
+  - action: ticker.notify
+    data:
+      actions: category_default
+      category: X Notifications
+      title: PROBLEM
+      message: Janitor speakers are malfunctioning.
   - if:
-    - condition: trigger
-      id: just_recovered
+    - condition: state
+      entity_id: media_player.janitor_primary
+      state: unavailable
     then:
-    - action: homeassistant.reload_config_entry
-      target:
-        entity_id: media_player.janitor_primary
-    else:
-    - action: ticker.notify
-      data:
-        actions: category_default
-        category: X Notifications
-        title: PROBLEM
-        message: Janitor speakers are malfunctioning.
-    - if:
-      - condition: state
-        entity_id: media_player.janitor_primary
-        state: unavailable
-      then:
-      - action: shell_command.reboot_janitor_speaker
-    - if:
-      - condition: state
-        entity_id: media_player.janitor_secondary
-        state: unavailable
-      then:
-      - action: shell_command.reboot_janitor_speaker_secondary
-    - action: homeassistant.reload_config_entry
-      target:
-        entity_id: media_player.janitor_primary
+    - action: shell_command.reboot_janitor_speaker
+  - if:
+    - condition: state
+      entity_id: media_player.janitor_secondary
+      state: unavailable
+    then:
+    - action: shell_command.reboot_janitor_speaker_secondary
   mode: queued
   max: 5
 - id: '1785082621461'
