@@ -55,7 +55,9 @@
         metadata: {}
         data:
           category: X Notifications
-          message: Laundry is ready!
+          message: 'Laundry is ready!
+
+            HUOM: KÄÄNNÄ KAHVA'
           title: ' '
     - conditions:
       - condition: state
@@ -67,7 +69,9 @@
         metadata: {}
         data:
           category: Seba Notifications
-          message: Laundry is ready!
+          message: 'Laundry is ready!
+
+            HUOM: KÄÄNNÄ KAHVA'
           title: ' '
     - conditions:
       - condition: state
@@ -79,7 +83,9 @@
         metadata: {}
         data:
           category: General
-          message: Joku nobolonski unohti painaa nappia mut siis pyykit on done
+          message: 'Joku nobolonski unohti painaa nappia mut siis pyykit on done.
+
+            HUOM: KÄÄNNÄ KAHVA'
           title: '  '
   - action: input_select.select_option
     metadata: {}
@@ -167,6 +173,20 @@
           entity_id: input_select.laundry_machine_user
         data:
           option: nobolonski
+      - action: script.turn_on
+        target:
+          entity_id: script.jungle_audio_controller
+        data:
+          variables:
+            action: stop
+            category: easter_egg
+      - action: input_boolean.turn_on
+        metadata: {}
+        target:
+          entity_id:
+          - input_boolean.jungle_easter_egg_played
+          - input_boolean.jungle_special_easter_egg_played
+        data: {}
     - conditions:
       - condition: trigger
         id:
@@ -500,7 +520,7 @@
   description: Controls the time of day mode (helper) based on current time of day.
   triggers:
   - trigger: time
-    at: 07:00:00
+    at: 08:00:00
     weekday:
     - sat
     - fri
@@ -800,7 +820,9 @@
     - action: input_boolean.turn_off
       metadata: {}
       target:
-        entity_id: input_boolean.jungle_easter_egg_played
+        entity_id:
+        - input_boolean.jungle_easter_egg_played
+        - input_boolean.jungle_special_easter_egg_played
       data: {}
   - choose:
     - conditions:
@@ -970,6 +992,43 @@
         target:
           entity_id: input_boolean.toilet_sink_light_auto_mode
         data: {}
+  - delay: 00:01:00
+  - if:
+    - condition: template
+      value_template: "{% set last_success =\n    as_timestamp(\n      states('input_datetime.automatic_alarm_last_success'),\n
+        \     0\n    )\n%}\n{% if now() >= today_at('20:00') %}\n  {% set expected
+        =\n      as_timestamp(today_at('19:50'))\n  %}\n  {{ last_success < expected
+        }}\n\n{% elif now() < today_at('15:00') %}\n  {% set expected =\n      as_timestamp(\n
+        \       today_at('19:50') - timedelta(days=1)\n      )\n  %}\n  {{ last_success
+        < expected }}\n\n{% else %}\n  false\n{% endif %}"
+    then:
+    - action: automation.trigger
+      target:
+        entity_id: automation.automatic_morning_alarm_planner
+    - wait_template: "{% set last_success =\n    as_timestamp(\n      states('input_datetime.automatic_alarm_last_success'),\n
+        \     0\n    )\n%}\n{% if now() >= today_at('20:00') %}\n  {% set expected
+        =\n      as_timestamp(today_at('19:50'))\n  %}\n{% else %}\n  {% set expected
+        =\n      as_timestamp(\n        today_at('19:50') - timedelta(days=1)\n      )\n
+        \ %}\n{% endif %}\n{{ last_success >= expected }}"
+      timeout: 00:03:00
+      continue_on_timeout: true
+    - if:
+      - condition: template
+        value_template: "{% set last_success =\n    as_timestamp(\n      states('input_datetime.automatic_alarm_last_success'),\n
+          \     0\n    )\n%}\n{% if now() >= today_at('20:00') %}\n  {% set expected
+          =\n      as_timestamp(today_at('19:50'))\n  %}\n{% else %}\n  {% set expected
+          =\n      as_timestamp(\n        today_at('19:50') - timedelta(days=1)\n
+          \     )\n  %}\n{% endif %}\n{{ last_success < expected }}"
+      then:
+      - action: notify.mobile_app_x_phone
+        data:
+          title: ⚠️ Automatic alarm problem
+          message: Home Assistant restarted after the normal alarm check was missed,
+            and automatic recovery did not complete successfully. Please check your
+            calendar and alarms manually.
+          data:
+            ttl: 0
+            priority: high
 - id: '1782341081247'
   alias: Jungle Ambient Handler
   description: Controls ambient soundtrack based on bathroom occupancy and time of
@@ -1129,7 +1188,10 @@
       sequence:
       - action: input_boolean.turn_off
         target:
-          entity_id: input_boolean.jungle_easter_egg_played
+          entity_id:
+          - input_boolean.jungle_easter_egg_played
+          - input_boolean.jungle_special_easter_egg_played
+        data: {}
       - action: script.turn_on
         target:
           entity_id: script.jungle_audio_controller
@@ -1149,63 +1211,6 @@
             skip_fade_in: true
   mode: queued
   max: 10
-- id: '1784909281271'
-  alias: Janitor Speakers Self-Heal (SSH Restart + MA Reload)
-  description: ' If speakers malfunction, tries to restore bathroom speaker system
-    following a malfunction and sends a notification.'
-  triggers:
-  - trigger: state
-    entity_id:
-    - media_player.janitor_primary
-    - media_player.janitor_secondary
-    to:
-    - unavailable
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 30
-    id: went_unavailable
-  - trigger: time_pattern
-    minutes: /5
-    id: periodic
-  conditions:
-  - condition: or
-    conditions:
-    - condition: state
-      entity_id: media_player.janitor_primary
-      state:
-      - unavailable
-    - condition: state
-      entity_id: media_player.janitor_secondary
-      state:
-      - unavailable
-  actions:
-  - action: homeassistant.reload_config_entry
-    target:
-      entity_id:
-      - media_player.janitor_primary
-      - media_player.janitor_secondary
-    data: {}
-  - action: ticker.notify
-    data:
-      actions: category_default
-      category: X Notifications
-      title: PROBLEM
-      message: Janitor speakers are malfunctioning.
-  - if:
-    - condition: state
-      entity_id: media_player.janitor_primary
-      state: unavailable
-    then:
-    - action: shell_command.reboot_janitor_speaker
-  - if:
-    - condition: state
-      entity_id: media_player.janitor_secondary
-      state: unavailable
-    then:
-    - action: shell_command.reboot_janitor_speaker_secondary
-  mode: queued
-  max: 5
 - id: '1785082621461'
   alias: Home Assistant Auto-update on a schedule base v2026.6.0
   description: Automatic updates
@@ -1213,79 +1218,6 @@
     path: edwardtfn/auto_update_scheduled.yaml
     input:
       schedule_entity: schedule.ha_update_window
-- id: '1785574877698'
-  alias: Shopping List Reminder
-  description: Sends grouped phone notifications for grocery items.
-  triggers:
-  - trigger: state
-    entity_id:
-    - person.aksu
-    to:
-    - Main Grocery Store
-    - 24h Store
-    - Nearby Shopping Center
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 15
-  - trigger: template
-    value_template: '{{ states(''input_text.car_bt_mac'') in (state_attr(''sensor.x_phone_bluetooth_connection'',
-      ''connected_paired_devices'') | string) }}'
-    enabled: false
-  conditions:
-  - condition: todo.incomplete
-    target:
-      entity_id: todo.shopping_list
-    options:
-      for: 00:00:00
-      threshold:
-        type: above
-        value:
-          active_choice: number
-          number: 0
-  - condition: not
-    conditions:
-    - condition: template
-      value_template: '{{ states(''sensor.x_phone_wi_fi_connection'') == states(''input_text.home_ssid'')
-        }}'
-  actions:
-  - action: todo.get_items
-    metadata: {}
-    target:
-      entity_id: todo.shopping_list
-    data:
-      status: needs_action
-    response_variable: my_shopping_list
-  - repeat:
-      for_each: '{{ my_shopping_list[''todo.shopping_list''][''items''] }}'
-      sequence:
-      - action: notify.mobile_app_x_phone
-        data:
-          message: "\U0001F6D2 {{ repeat.item.summary }}"
-          data:
-            group: Shopping List Reminder
-            tag: '{{ repeat.item.summary }}'
-            actions:
-            - action: MARK_DONE_{{ repeat.item.summary }}
-              title: Mark Done
-  - wait_for_trigger:
-    - trigger: state
-      entity_id: person.aksu
-      from:
-      - Main Grocery Store
-      - 24h Store
-      - Nearby Shopping Center
-      for:
-        minutes: 3
-  - repeat:
-      for_each: '{{ my_shopping_list[''todo.shopping_list''][''items''] }}'
-      sequence:
-      - action: notify.mobile_app_x_phone
-        data:
-          message: clear_notification
-          data:
-            tag: '{{ repeat.item.summary }}'
-  mode: single
 - id: '1785603288738'
   alias: Daily config export to Git
   description: Starts the Git Exporter add-on once a day. The add-on is one-shot,
@@ -1299,22 +1231,6 @@
     data:
       addon: 68413af6_git-exporter
   mode: single
-- id: '1785760445178'
-  alias: 'Shopping List: Mark Item Done from Notification'
-  description: Listens for notification actions and updates the to-do list.
-  triggers:
-  - trigger: event
-    event_type: mobile_app_notification_action
-  conditions:
-  - condition: template
-    value_template: '{{ trigger.event.data.action.startswith(''MARK_DONE_'') }}'
-  actions:
-  - action: todo.remove_item
-    target:
-      entity_id: todo.shopping_list
-    data:
-      item: '{{ trigger.event.data.action | replace(''MARK_DONE_'', '''') }}'
-  mode: parallel
 - id: '1786128416779'
   alias: Monkey Light Automation
   description: Controls the main light in the bathroom based on a presense sensor.
@@ -1346,7 +1262,7 @@
       no_motion_timeout:
         hours: 0
         minutes: 0
-        seconds: 0
+        seconds: 20
       trigger_on_vibe_change: true
       trigger_on_maintenance: true
       auto_mode_helper: input_boolean.hallway_lights_auto_mode
@@ -1446,6 +1362,18 @@
     options:
       behavior: each
     id: jungle door cleared
+  - trigger: occupancy.detected
+    target:
+      device_id: e560d35c652ed1d26de8a817debb869b
+    options:
+      behavior: each
+    id: hallway door detected
+  - trigger: occupancy.cleared
+    target:
+      device_id: e560d35c652ed1d26de8a817debb869b
+    options:
+      behavior: each
+    id: hallway door cleared
   - trigger: motion.detected
     target:
       entity_id: binary_sensor.hallway_hallway_motion_sensor_2_motion
@@ -1584,6 +1512,7 @@
       - condition: trigger
         id:
         - hallway detected
+        - hallway door detected
       sequence:
       - action: input_boolean.turn_on
         metadata: {}
@@ -1594,6 +1523,7 @@
       - condition: trigger
         id:
         - hallway cleared
+        - hallway door cleared
       sequence:
       - action: input_boolean.turn_off
         metadata: {}
@@ -2030,10 +1960,13 @@
   use_blueprint:
     path: custom/ikea-bilresa-scroll-wheel-kelvin-v2.yaml
     input:
-      warmth_min_kelvin: 2200
+      warmth_min_kelvin: 2000
       controller_device: 9976b5736cb213ed683d0ca3efeeaa61
       scroll_target: light.seb_lights
       hue_select_helper: input_boolean.seb_lights_hue_select
+      color_cycle_target: light.seb_lights
+      warmth_max_kelvin: 6535
+      scroll_mode: warmth
 - id: '1786309783553'
   alias: Jungle Lights Scroll Button
   description: Controls Jungle Lights when using the ikea BILRESA scrollbutton
@@ -2425,6 +2358,12 @@
       trigger_on_vibe_change: true
       trigger_on_maintenance: true
       auto_mode_helper: input_boolean.kitchen_lights_auto_mode
+      custom_off_action:
+      - action: mqtt.publish
+        metadata: {}
+        data:
+          topic: zigbee2mqtt/Kitchen Lights/set
+          payload: '{"brightness_move_onoff": -7}'
 - id: '1786401410106'
   alias: Jungle Egg Auto Finish
   description: Detects and tells the Audio Controller that an easter egg has finished
@@ -2805,13 +2744,20 @@
   mode: single
 - id: '1787250530331'
   alias: High Accuracy GPS Tracking when going out
-  description: Enables high accuracy GPS mode when disconnecting from home WIFI to
-    detect whether a nearby store is entered
+  description: Enables high accuracy GPS for five minutes when leaving either home Wi-Fi network with
+    outstanding shopping items. Ignores switching between home networks and unavailable or unknown SSID
+    reports. SSID values stay in private UI helpers.
   triggers:
   - trigger: state
     entity_id: sensor.x_phone_wi_fi_connection
-    from: '{{ states(''input_text.home_ssid'') }}'
+    to: null
   conditions:
+  - condition: template
+    value_template: "{% set home_ssids = [states('input_text.home_ssid'), states('input_text.home_ssid_secondary')]\n\
+      \  | reject('in', ['', 'unknown', 'unavailable']) | list %}\n{{ trigger.from_state is not none and\
+      \ trigger.to_state is not none\n   and trigger.from_state.state in home_ssids\n   and trigger.to_state.state\
+      \ not in home_ssids\n   and trigger.to_state.state not in ['', 'unknown', 'unavailable', '<unknown\
+      \ ssid>'] }}"
   - condition: numeric_state
     entity_id: todo.shopping_list
     above: 0
@@ -2832,3 +2778,830 @@
       data:
         command: turn_off
   mode: restart
+- id: '1788370100462'
+  alias: Open Door
+  description: Automatically opens stairwell door and plays random notification
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.door_intercom_ring
+    to: 'on'
+  conditions: []
+  actions:
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 3
+      milliseconds: 0
+  - action: button.press
+    target:
+      entity_id: button.door_open_door
+    data: {}
+  - condition: not
+    conditions:
+    - condition: state
+      entity_id: input_select.time_of_day_mode
+      state: Night
+    - condition: state
+      entity_id: input_select.vibe_mode
+      state:
+      - Maintenance
+  - action: music_assistant.play_announcement
+    target:
+      entity_id: media_player.living_room_speaker_2
+    data:
+      announce_volume: 67
+      use_pre_announce: false
+      url: "{{ [\n  'http://homeassistant.local:8123/local/hälytys.mp3',\n  'http://homeassistant.local:8123/local/nuke.mp3',\n]
+        | random }}"
+  mode: single
+- id: '1788434250763'
+  alias: Notify When Hub not Charging
+  description: Sends a notification when Hub is not charging
+  triggers:
+  - trigger: battery.level_crossed_threshold
+    target:
+      entity_id: sensor.oneplus_pad_go_battery_level
+    options:
+      behavior: each
+      for: 00:00:00
+      threshold:
+        type: below
+        value:
+          active_choice: number
+          number: 50
+  conditions:
+  - condition: state
+    entity_id: sensor.oneplus_pad_go_battery_state
+    state:
+    - discharging
+    - not_charging
+  actions:
+  - action: ticker.notify
+    metadata: {}
+    data:
+      category: X Notifications
+      message: Oneplus Pad is not charging
+  mode: single
+- id: '1790629809163'
+  alias: Janitor Speakers Self-Heal
+  description: Repairs a player that has remained unavailable or unknown for two minutes.
+    Successful recovery is logged silently; sends a phone alert only when a player
+    is still unavailable after the repair attempt. A ten-minute cooldown limits repeated
+    repair attempts.
+  triggers:
+  - trigger: state
+    entity_id:
+    - media_player.janitor_primary
+    - media_player.janitor_secondary
+    to: unavailable
+    for: 00:02:00
+    id: unavailable
+  - trigger: state
+    entity_id:
+    - media_player.janitor_primary
+    - media_player.janitor_secondary
+    to: unknown
+    for: 00:02:00
+    id: unknown
+  - trigger: time_pattern
+    minutes: /5
+    id: periodic
+  conditions:
+  - condition: or
+    conditions:
+    - condition: state
+      entity_id: media_player.janitor_primary
+      state: unavailable
+      for: 00:02:00
+    - condition: state
+      entity_id: media_player.janitor_primary
+      state: unknown
+      for: 00:02:00
+    - condition: state
+      entity_id: media_player.janitor_secondary
+      state: unavailable
+      for: 00:02:00
+    - condition: state
+      entity_id: media_player.janitor_secondary
+      state: unknown
+      for: 00:02:00
+  actions:
+  - variables:
+      initial_primary: '{{ states(''media_player.janitor_primary'') }}'
+      initial_secondary: '{{ states(''media_player.janitor_secondary'') }}'
+      affected_players: "{% set ns = namespace(players=[]) %} {% for player in ['media_player.janitor_primary',\n
+        \                 'media_player.janitor_secondary'] %}\n  {% set entity =
+        states[player] %}\n  {% if entity is not none\n        and entity.state in
+        ['unavailable', 'unknown']\n        and (as_timestamp(now()) - as_timestamp(entity.last_changed))
+        >= 120 %}\n    {% set ns.players = ns.players + [player] %}\n  {% endif %}\n{%
+        endfor %} {{ ns.players }}"
+      primary_restart:
+        returncode: -999
+      secondary_restart:
+        returncode: -999
+  - condition: template
+    value_template: '{{ affected_players | count > 0 }}'
+  - action: system_log.write
+    continue_on_error: true
+    data:
+      level: warning
+      logger: janitor.self_heal
+      message: Starting availability repair. Primary={{ initial_primary }}, secondary={{
+        initial_secondary }}. Affected={{ affected_players }}.
+  - action: homeassistant.reload_config_entry
+    continue_on_error: true
+    target:
+      entity_id: media_player.janitor_primary
+  - delay: 00:00:45
+  - if:
+    - condition: template
+      value_template: "{{ 'media_player.janitor_primary' in affected_players\n   and
+        states('media_player.janitor_primary') in ['unavailable', 'unknown'] }}"
+    then:
+    - action: shell_command.reboot_janitor_speaker
+      continue_on_error: true
+      response_variable: primary_restart
+  - if:
+    - condition: template
+      value_template: "{{ 'media_player.janitor_secondary' in affected_players\n   and
+        states('media_player.janitor_secondary') in ['unavailable', 'unknown'] }}"
+    then:
+    - action: shell_command.reboot_janitor_speaker_secondary
+      continue_on_error: true
+      response_variable: secondary_restart
+  - delay: 00:01:00
+  - variables:
+      final_primary: '{{ states(''media_player.janitor_primary'') }}'
+      final_secondary: '{{ states(''media_player.janitor_secondary'') }}'
+      primary_code: '{{ (primary_restart | default({})).get(''returncode'', -999)
+        }}'
+      secondary_code: '{{ (secondary_restart | default({})).get(''returncode'', -999)
+        }}'
+  - action: system_log.write
+    continue_on_error: true
+    data:
+      level: warning
+      logger: janitor.self_heal
+      message: 'Availability repair result. Primary={{ final_primary }}, secondary={{
+        final_secondary }}. SSH return codes: primary={{ primary_code }}, secondary={{
+        secondary_code }}. -999 means skipped or no response; 0 means command succeeded,
+        not proof of audible playback. Inspect the trace for action errors.'
+  - if:
+    - condition: template
+      value_template: '{{ final_primary in [''unavailable'', ''unknown''] or final_secondary
+        in [''unavailable'', ''unknown''] }}'
+    then:
+    - action: ticker.notify
+      continue_on_error: true
+      data:
+        actions: category_default
+        category: X Notifications
+        title: Janitor speakers need attention
+        message: Automatic repair did not restore availability. Primary={{ final_primary
+          }}, secondary={{ final_secondary }}. Check Pi power/Wi-Fi and Music Assistant.
+          Details are in the self-heal trace.
+  - delay: 00:10:00
+  mode: single
+  max_exceeded: silent
+  trace:
+    stored_traces: 10
+- id: '1790884504747'
+  alias: Vitamins Reminder System
+  description: Daily vitamin reminders with persistent Done buttons.
+  triggers:
+  - trigger: time
+    at: '20:00:00'
+    id: schedule
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: DAILY_VITAMINS_DONE
+    id: daily_done
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: VITAMIN_D_DONE
+    id: vitamin_d_done
+  - trigger: event
+    event_type: mobile_app_notification_cleared
+    id: notification_cleared
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: schedule
+      sequence:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.daily_vitamins_pending
+      - action: ticker.notify
+        data:
+          category: X Notifications
+          title: ''
+          message: Take your daily vitamins.
+          data:
+            tag: vitamins_daily
+            actions:
+            - action: DAILY_VITAMINS_DONE
+              title: Done
+      - if:
+        - condition: template
+          value_template: "{{\n  (\n    (\n      now().date()\n      - strptime('2026-10-01',
+            '%Y-%m-%d').date()\n    ).days % 3\n  ) == 0\n}}\n"
+        then:
+        - action: input_boolean.turn_on
+          target:
+            entity_id: input_boolean.vitamin_d_pending
+        - action: ticker.notify
+          data:
+            category: X Notifications
+            title: ''
+            message: Take your Vitamin D.
+            data:
+              tag: vitamins_vitamin_d
+              actions:
+              - action: VITAMIN_D_DONE
+                title: Done
+    - conditions:
+      - condition: trigger
+        id: daily_done
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.daily_vitamins_pending
+      - action: ticker.notify
+        data:
+          category: X Notifications
+          title: ''
+          message: clear_notification
+          data:
+            tag: vitamins_daily
+    - conditions:
+      - condition: trigger
+        id: vitamin_d_done
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.vitamin_d_pending
+      - action: ticker.notify
+        data:
+          category: X Notifications
+          title: ''
+          message: clear_notification
+          data:
+            tag: vitamins_vitamin_d
+    - conditions:
+      - condition: trigger
+        id: notification_cleared
+      - condition: template
+        value_template: '{{ trigger.event.data.tag | default('''') == ''vitamins_daily''
+          }}
+
+          '
+      - condition: state
+        entity_id: input_boolean.daily_vitamins_pending
+        state: 'on'
+      sequence:
+      - action: ticker.notify
+        data:
+          category: X Notifications
+          title: ''
+          message: Take your daily vitamins.
+          data:
+            tag: vitamins_daily
+            actions:
+            - action: DAILY_VITAMINS_DONE
+              title: Done
+    - conditions:
+      - condition: trigger
+        id: notification_cleared
+      - condition: template
+        value_template: '{{ trigger.event.data.tag | default('''') == ''vitamins_vitamin_d''
+          }}
+
+          '
+      - condition: state
+        entity_id: input_boolean.vitamin_d_pending
+        state: 'on'
+      sequence:
+      - action: ticker.notify
+        data:
+          category: X Notifications
+          title: ''
+          message: Take your Vitamin D.
+          data:
+            tag: vitamins_vitamin_d
+            actions:
+            - action: VITAMIN_D_DONE
+              title: Done
+  mode: parallel
+  max: 10
+- id: '1790975892463'
+  alias: 'Shopping List: Notifications & Management'
+  description: Sends silent shopping list notifications upon arrival, clears them
+    on exit, and handles Mark Done actions.
+  triggers:
+  - trigger: state
+    id: arrived_store
+    entity_id: person.aksu
+    to:
+    - Main Grocery Store
+    - 24h Store
+    - Nearby Shopping Center
+    for:
+      seconds: 15
+  - trigger: state
+    id: left_store
+    entity_id:
+    - person.aksu
+    from:
+    - Main Grocery Store
+    - 24h Store
+    - Nearby Shopping Center
+    for:
+      hours: 0
+      minutes: 1
+      seconds: 0
+  - trigger: event
+    id: mark_done
+    event_type: mobile_app_notification_action
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: arrived_store
+      - condition: todo.incomplete
+        target:
+          entity_id: todo.shopping_list
+        options:
+          for: 00:00:00
+          threshold:
+            type: above
+            value:
+              active_choice: number
+              number: 0
+      - condition: not
+        conditions:
+        - condition: template
+          value_template: '{{ states(''sensor.x_phone_wi_fi_connection'') == states(''input_text.home_ssid'')
+            }}'
+      sequence:
+      - action: todo.get_items
+        target:
+          entity_id: todo.shopping_list
+        data:
+          status: needs_action
+        response_variable: current_list
+      - repeat:
+          for_each: '{{ current_list[''todo.shopping_list''][''items''] }}'
+          sequence:
+          - action: notify.mobile_app_x_phone
+            data:
+              message: "\U0001F6D2 {{ repeat.item.summary }}"
+              data:
+                channel: Shopping Reminders
+                importance: default
+                group: Shopping List Reminder
+                tag: '{{ repeat.item.summary }}'
+                actions:
+                - action: MARK_DONE_{{ repeat.item.summary }}
+                  title: Mark Done
+    - conditions:
+      - condition: trigger
+        id: mark_done
+      - condition: template
+        value_template: '{{ trigger.event.data.action.startswith(''MARK_DONE_'') }}'
+      sequence:
+      - variables:
+          item_name: '{{ trigger.event.data.action | replace(''MARK_DONE_'', '''')
+            }}'
+      - action: todo.remove_item
+        target:
+          entity_id: todo.shopping_list
+        data:
+          item: '{{ item_name }}'
+      - action: notify.mobile_app_x_phone
+        data:
+          message: clear_notification
+          data:
+            tag: '{{ item_name }}'
+    - conditions:
+      - condition: trigger
+        id: left_store
+      sequence:
+      - action: todo.get_items
+        target:
+          entity_id: todo.shopping_list
+        data:
+          status:
+          - needs_action
+          - completed
+        response_variable: exit_list
+      - repeat:
+          for_each: '{{ exit_list[''todo.shopping_list''][''items''] }}'
+          sequence:
+          - action: notify.mobile_app_x_phone
+            data:
+              message: clear_notification
+              data:
+                tag: '{{ repeat.item.summary }}'
+  mode: parallel
+  max: 10
+- id: '1791134666788'
+  alias: Reset Soundbar Volume on TV On
+  description: Reset TV volume to a safe value after turning it on
+  triggers:
+  - entity_id:
+    - remote.shield_tv
+    from:
+    - 'off'
+    - standby
+    to:
+    - idle
+    - playing
+    - 'on'
+    trigger: state
+  conditions: []
+  actions:
+  - delay: 00:00:03
+  - action: media_player.volume_set
+    target:
+      entity_id: media_player.shield_4
+    data:
+      volume_level: 0.2
+  mode: restart
+- id: '1791297856150'
+  alias: Automatic morning alarm planner
+  description: Refreshes selected Google calendars, asks Gemini to plan wake-up alarms,
+    creates the alarms on Android, and reports the result.
+  triggers:
+  - trigger: time
+    at: '20:00:00'
+  conditions: []
+  actions:
+  - action: homeassistant.update_entity
+    data:
+      entity_id:
+      - calendar.tapahtumat
+      - calendar.roi
+  - action: calendar.get_events
+    target:
+      entity_id:
+      - calendar.tapahtumat
+      - calendar.roi
+    data:
+      start_date_time: '{{ now().isoformat() }}'
+      end_date_time: '{% set end = today_at(''15:00'') %} {{ (end + timedelta(days=1)
+        if now() >= end else end).isoformat() }}'
+    response_variable: agenda
+  - condition: template
+    value_template: "{{ state_attr('sensor.automatic_alarm_private_context', 'context')\n
+      \  not in [none, '', 'unknown', 'unavailable'] }}"
+  - action: ai_task.generate_data
+    data:
+      entity_id: ai_task.google_ai_task
+      task_name: Automatic wake-up alarm planner
+      instructions: 'You are an automatic wake-up alarm planning system.
+
+
+        CURRENT LOCAL DATE AND TIME:
+
+        {{ now() }}
+
+
+        PRIVATE USER CONTEXT:
+
+        {{ state_attr(''sensor.automatic_alarm_private_context'', ''context'') }}
+
+
+        UPCOMING CALENDAR DATA:
+
+        {{ agenda | to_json(pretty_print=true) }}
+
+
+        TASK
+
+
+        Determine whether the user needs one or more wake-up alarms based on
+
+        the private user context and the supplied calendar events.
+
+
+        Only calendar.tapahtumat and calendar.roi have intentionally been
+
+        supplied. Do not assume anything about other calendars.
+
+
+        Consider:
+
+        - which calendar an event belongs to
+
+        - event title
+
+        - event start and end time
+
+        - event description, when available
+
+        - event location, when available
+
+        - preparation time
+
+        - likely travel requirements
+
+        - whether an event genuinely requires waking up
+
+        - whether there may be multiple separate sleep periods
+
+
+        The user may occasionally need to wake during the night for one
+
+        commitment, return home, and go back to sleep. A later morning
+
+        commitment can therefore require another independent alarm.
+
+
+        Never assume that an earlier overnight alarm means the user will stay
+
+        awake afterwards.
+
+
+        ALARM RULES
+
+
+        Create an alarm only when there is a realistic possibility that the
+
+        user might otherwise be asleep when preparation needs to begin.
+
+
+        Each alarm should leave enough time for:
+
+        - getting ready
+
+        - required travel
+
+        - any appropriate safety margin described in the private context
+
+
+        If an event is online, do not add travel time.
+
+
+        Prefer an unnecessary or somewhat too-early alarm over risking missing
+
+        an important commitment.
+
+
+        Never create an alarm whose next occurrence would be outside the
+
+        supplied planning period.
+
+
+        Return at most three independent alarms.
+
+
+        Put used alarm slots in chronological order.
+
+
+        For every unused alarm slot:
+
+        - needed = false
+
+        - time = 00:00:00
+
+        - label = Unused
+
+
+        UNCERTAINTY / MANUAL REVIEW
+
+
+        manual_review_needed means the automation should still complete, but
+
+        the user should personally inspect the chosen alarms.
+
+
+        manual_review_needed does NOT mean that alarms should automatically be
+
+        omitted.
+
+
+        When information is somewhat uncertain but a reasonably safe alarm can
+
+        still be chosen, create a conservative alarm AND set
+
+        manual_review_needed = true.
+
+
+        Prefer choosing an alarm somewhat too early rather than too late.
+
+
+        Only omit an alarm because of uncertainty if there is genuinely no
+
+        reasonable safe alarm time to choose.
+
+
+        If no meaningful uncertainty exists:
+
+        - manual_review_needed = false
+
+        - manual_review_reason = None
+
+
+        decision_summary should briefly explain why the alarms were selected or
+
+        why no alarms were necessary.'
+      structure:
+        alarm_1_needed:
+          description: Whether the first wake-up alarm is required.
+          required: true
+          selector:
+            boolean:
+        alarm_1_time:
+          description: Local alarm time in HH:MM:SS format. Use 00:00:00 if unused.
+          required: true
+          selector:
+            time:
+        alarm_1_label:
+          description: Short human-readable reason for the alarm. Use Unused if unused.
+          required: true
+          selector:
+            text:
+        alarm_1_event_time:
+          description: Start time of the event this alarm is intended for, in HH:MM
+            format. Use Unused if the alarm slot is unused.
+          required: true
+          selector:
+            text:
+        alarm_2_needed:
+          description: Whether a second independent wake-up alarm is required.
+          required: true
+          selector:
+            boolean:
+        alarm_2_time:
+          description: Local alarm time in HH:MM:SS format. Use 00:00:00 if unused.
+          required: true
+          selector:
+            time:
+        alarm_2_label:
+          description: Short human-readable reason for the alarm. Use Unused if unused.
+          required: true
+          selector:
+            text:
+        alarm_2_event_time:
+          description: Start time of the event this alarm is intended for, in HH:MM
+            format. Use Unused if the alarm slot is unused.
+          required: true
+          selector:
+            text:
+        alarm_3_needed:
+          description: Whether a third independent wake-up alarm is required.
+          required: true
+          selector:
+            boolean:
+        alarm_3_time:
+          description: Local alarm time in HH:MM:SS format. Use 00:00:00 if unused.
+          required: true
+          selector:
+            time:
+        alarm_3_label:
+          description: Short human-readable reason for the alarm. Use Unused if unused.
+          required: true
+          selector:
+            text:
+        alarm_3_event_time:
+          description: Start time of the event this alarm is intended for, in HH:MM
+            format. Use Unused if the alarm slot is unused.
+          required: true
+          selector:
+            text:
+        manual_review_needed:
+          description: True when meaningful uncertainty remains and the user should
+            inspect the automatically chosen alarm plan. Conservative alarms should
+            still be supplied whenever reasonably possible.
+          required: true
+          selector:
+            boolean:
+        manual_review_reason:
+          description: Brief explanation of what the user should check. Use None when
+            no manual review is required.
+          required: true
+          selector:
+            text:
+        decision_summary:
+          description: Brief human-readable explanation of why the alarms were chosen
+            or why no alarms were necessary.
+          required: true
+          selector:
+            text:
+    response_variable: alarm_plan
+  - condition: template
+    value_template: "{% if not (alarm_plan.data.alarm_1_needed | bool) %}\n  true\n{%
+      elif alarm_plan.data.alarm_1_time == '00:00:00' %}\n  false\n{% else %}\n  {%
+      set alarm_today = today_at(alarm_plan.data.alarm_1_time) %}\n  {% set alarm_datetime
+      =\n       alarm_today if alarm_today > now()\n       else alarm_today + timedelta(days=1)
+      %}\n  {{ alarm_datetime <= today_at('15:00') + timedelta(days=1) }}\n{% endif
+      %}"
+  - condition: template
+    value_template: "{% if not (alarm_plan.data.alarm_2_needed | bool) %}\n  true\n{%
+      elif alarm_plan.data.alarm_2_time == '00:00:00' %}\n  false\n{% else %}\n  {%
+      set alarm_today = today_at(alarm_plan.data.alarm_2_time) %}\n  {% set alarm_datetime
+      =\n       alarm_today if alarm_today > now()\n       else alarm_today + timedelta(days=1)
+      %}\n  {{ alarm_datetime <= today_at('15:00') + timedelta(days=1) }}\n{% endif
+      %}"
+  - condition: template
+    value_template: "{% if not (alarm_plan.data.alarm_3_needed | bool) %}\n  true\n{%
+      elif alarm_plan.data.alarm_3_time == '00:00:00' %}\n  false\n{% else %}\n  {%
+      set alarm_today = today_at(alarm_plan.data.alarm_3_time) %}\n  {% set alarm_datetime
+      =\n       alarm_today if alarm_today > now()\n       else alarm_today + timedelta(days=1)
+      %}\n  {{ alarm_datetime <= today_at('15:00') + timedelta(days=1) }}\n{% endif
+      %}"
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ alarm_plan.data.alarm_1_needed | bool }}'
+      sequence:
+      - action: notify.mobile_app_x_phone
+        data:
+          message: command_activity
+          data:
+            intent_action: android.intent.action.SET_ALARM
+            intent_extras: android.intent.extra.alarm.HOUR:{{ alarm_plan.data.alarm_1_time.split(':')[0]
+              | int }},android.intent.extra.alarm.MINUTES:{{ alarm_plan.data.alarm_1_time.split(':')[1]
+              | int }},android.intent.extra.alarm.MESSAGE:{{ ('HA - ' ~ alarm_plan.data.alarm_1_label)
+              | urlencode }}:String.urlencoded,android.intent.extra.alarm.SKIP_UI:true
+  - delay:
+      seconds: 10
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ alarm_plan.data.alarm_2_needed | bool }}'
+      sequence:
+      - action: notify.mobile_app_x_phone
+        data:
+          message: command_activity
+          data:
+            intent_action: android.intent.action.SET_ALARM
+            intent_extras: android.intent.extra.alarm.HOUR:{{ alarm_plan.data.alarm_2_time.split(':')[0]
+              | int }},android.intent.extra.alarm.MINUTES:{{ alarm_plan.data.alarm_2_time.split(':')[1]
+              | int }},android.intent.extra.alarm.MESSAGE:{{ ('HA - ' ~ alarm_plan.data.alarm_2_label)
+              | urlencode }}:String.urlencoded,android.intent.extra.alarm.SKIP_UI:true
+  - delay:
+      seconds: 10
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ alarm_plan.data.alarm_3_needed | bool }}'
+      sequence:
+      - action: notify.mobile_app_x_phone
+        data:
+          message: command_activity
+          data:
+            intent_action: android.intent.action.SET_ALARM
+            intent_extras: android.intent.extra.alarm.HOUR:{{ alarm_plan.data.alarm_3_time.split(':')[0]
+              | int }},android.intent.extra.alarm.MINUTES:{{ alarm_plan.data.alarm_3_time.split(':')[1]
+              | int }},android.intent.extra.alarm.MESSAGE:{{ ('HA - ' ~ alarm_plan.data.alarm_3_label)
+              | urlencode }}:String.urlencoded,android.intent.extra.alarm.SKIP_UI:true
+  - action: notify.mobile_app_x_phone
+    data:
+      title: "{% if alarm_plan.data.manual_review_needed | bool %}\n  ⚠️ Automatic
+        Alarm — please check\n{% elif alarm_plan.data.alarm_1_needed | bool\n    or
+        alarm_plan.data.alarm_2_needed | bool\n    or alarm_plan.data.alarm_3_needed
+        | bool %}\n  Alarms set\n{% else %}\n  No alarms needed\n{% endif %}"
+      message: "{% if alarm_plan.data.alarm_1_needed | bool %}\nAlarm {{ alarm_plan.data.alarm_1_time[:5]
+        }} — {{ alarm_plan.data.alarm_1_label }} at {{ alarm_plan.data.alarm_1_event_time
+        }}\n{% endif %}\n{% if alarm_plan.data.alarm_2_needed | bool %}\nAlarm {{
+        alarm_plan.data.alarm_2_time[:5] }} — {{ alarm_plan.data.alarm_2_label }}
+        at {{ alarm_plan.data.alarm_2_event_time }}\n{% endif %}\n{% if alarm_plan.data.alarm_3_needed
+        | bool %}\nAlarm {{ alarm_plan.data.alarm_3_time[:5] }} — {{ alarm_plan.data.alarm_3_label
+        }} at {{ alarm_plan.data.alarm_3_event_time }}\n{% endif %}\n{% if not (alarm_plan.data.alarm_1_needed
+        | bool)\n      and not (alarm_plan.data.alarm_2_needed | bool)\n      and
+        not (alarm_plan.data.alarm_3_needed | bool) %}\nNothing in the calendar requires
+        a wake-up alarm.\n{% endif %}\n{% if alarm_plan.data.manual_review_needed
+        | bool %}\n\nCheck manually: {{ alarm_plan.data.manual_review_reason }}\n{%
+        endif %}"
+  - action: input_datetime.set_datetime
+    target:
+      entity_id: input_datetime.automatic_alarm_last_success
+    data:
+      datetime: '{{ now().strftime(''%Y-%m-%d %H:%M:%S'') }}'
+  mode: single
+- id: '1791300241153'
+  alias: Automatic alarm planner watchdog
+  description: Warns if the nightly alarm planning workflow did not finish successfully.
+  triggers:
+  - trigger: time
+    at: '20:15:00'
+  conditions:
+  - condition: template
+    value_template: "{{ as_timestamp(states('input_datetime.automatic_alarm_last_success'),
+      0)\n   < as_timestamp(today_at('19:50')) }}"
+  actions:
+  - action: notify.mobile_app_x_phone
+    data:
+      title: ⚠️ Automatic alarm problem
+      message: Automatic alarm planning did not complete successfully tonight. Please
+        check your calendar and morning alarms manually.
+      data:
+        ttl: 0
+        priority: high
+  mode: single
