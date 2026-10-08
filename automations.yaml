@@ -51,42 +51,48 @@
         state:
         - Aksu
       sequence:
-      - action: ticker.notify
+      - action: script.notification_send
         metadata: {}
         data:
-          category: X Notifications
-          message: 'Laundry is ready!
+          delivery: ticker
+          payload:
+            category: X Notifications
+            message: 'Laundry is ready!
 
-            HUOM: KÄÄNNÄ KAHVA'
-          title: ' '
+              HUOM: KÄÄNNÄ KAHVA'
+            title: ' '
     - conditions:
       - condition: state
         entity_id: input_select.laundry_machine_user
         state:
         - Seba
       sequence:
-      - action: ticker.notify
+      - action: script.notification_send
         metadata: {}
         data:
-          category: Seba Notifications
-          message: 'Laundry is ready!
+          delivery: ticker
+          payload:
+            category: Seba Notifications
+            message: 'Laundry is ready!
 
-            HUOM: KÄÄNNÄ KAHVA'
-          title: ' '
+              HUOM: KÄÄNNÄ KAHVA'
+            title: ' '
     - conditions:
       - condition: state
         entity_id: input_select.laundry_machine_user
         state:
         - nobolonski
       sequence:
-      - action: ticker.notify
+      - action: script.notification_send
         metadata: {}
         data:
-          category: General
-          message: 'Joku nobolonski unohti painaa nappia mut siis pyykit on done.
+          delivery: ticker
+          payload:
+            category: General
+            message: 'Joku nobolonski unohti painaa nappia mut siis pyykit on done.
 
-            HUOM: KÄÄNNÄ KAHVA'
-          title: '  '
+              HUOM: KÄÄNNÄ KAHVA'
+            title: '  '
   - action: input_select.select_option
     metadata: {}
     target:
@@ -96,48 +102,48 @@
     alias: Reset User
   mode: single
 - id: '1774196799531'
-  alias: Jungle 2-Buttons
-  description: Maps buttons (2 buttons) to different users of the laundry machine
-    for future notification. Additionally controls bathroom sounds with alternative
-    inputs.
+  alias: Jungle Dual Button
+  description: Button 1 selects Aksu, button 2 selects Seba; double press plays an
+    admin easter egg, hold resets the user and stops easter-egg audio.
   triggers:
-  - domain: mqtt
-    device_id: 7f560e17593e674ffc8d2195c1adb9e1
-    type: action
-    subtype: 'on'
-    trigger: device
+  - trigger: state
+    entity_id: event.jungle_dual_button_button_1
     id: aksu
-  - domain: mqtt
-    device_id: 7f560e17593e674ffc8d2195c1adb9e1
-    type: action
-    subtype: 'off'
-    trigger: device
+    variables:
+      expected_event: multi_press_1
+  - trigger: state
+    entity_id: event.jungle_dual_button_button_2
     id: seba
-  - domain: mqtt
-    device_id: 7f560e17593e674ffc8d2195c1adb9e1
-    type: action
-    subtype: on_double
-    trigger: device
+    variables:
+      expected_event: multi_press_1
+  - trigger: state
+    entity_id: event.jungle_dual_button_button_1
     id: secondary
-  - domain: mqtt
-    device_id: 7f560e17593e674ffc8d2195c1adb9e1
-    type: action
-    subtype: off_double
-    trigger: device
+    variables:
+      expected_event: multi_press_2
+  - trigger: state
+    entity_id: event.jungle_dual_button_button_2
     id: secondary
-  - domain: mqtt
-    device_id: 7f560e17593e674ffc8d2195c1adb9e1
-    type: action
-    subtype: brightness_move_up
-    trigger: device
+    variables:
+      expected_event: multi_press_2
+  - trigger: state
+    entity_id: event.jungle_dual_button_button_1
     id: reset user
-  - domain: mqtt
-    device_id: 7f560e17593e674ffc8d2195c1adb9e1
-    type: action
-    subtype: brightness_move_down
-    trigger: device
+    variables:
+      expected_event: long_press
+  - trigger: state
+    entity_id: event.jungle_dual_button_button_2
     id: reset user
-  conditions: []
+    variables:
+      expected_event: long_press
+  conditions:
+  - condition: template
+    value_template: '{{ expected_event is not defined or (trigger.from_state is not
+      none and trigger.to_state is not none and trigger.to_state.state not in [''unknown'',''unavailable'','''']
+      and trigger.from_state.state != trigger.to_state.state and as_timestamp(trigger.to_state.state,0)
+      > 0 and (as_timestamp(now())-as_timestamp(trigger.to_state.state,0)) | abs <
+      5 and trigger.to_state.attributes.get(''event_type'','''') == expected_event)
+      }}'
   actions:
   - choose:
     - conditions:
@@ -553,7 +559,7 @@
     - sun
     id: evening
   - trigger: time
-    at: '23:00:00'
+    at: '22:00:00'
     weekday:
     - sat
     - fri
@@ -698,77 +704,59 @@
   mode: restart
 - id: '1775415056062'
   alias: Printer Ink Alert System
-  description: Sends a persistent phone notification when the printer's ink level
-    gets low.
+  description: Any valid ink level below 25% activates the alert; all six valid and
+    at least 25% resolves it. Unknown readings preserve it. Uses the generic notification
+    script.
   triggers:
-  - entity_id:
+  - trigger: state
+    entity_id:
     - sensor.epson_et_8550_series_c
     - sensor.epson_et_8550_series_gy
     - sensor.epson_et_8550_series_m
     - sensor.epson_et_8550_series_mb
     - sensor.epson_et_8550_series_pb
     - sensor.epson_et_8550_series_y
-    below: 25
-    id: send_alert
-    trigger: numeric_state
-  - entity_id:
-    - sensor.epson_et_8550_series_c
-    - sensor.epson_et_8550_series_gy
-    - sensor.epson_et_8550_series_m
-    - sensor.epson_et_8550_series_mb
-    - sensor.epson_et_8550_series_pb
-    - sensor.epson_et_8550_series_y
-    above: 25
-    id: clear_alert
-    trigger: numeric_state
+  - trigger: homeassistant
+    event: start
+  - trigger: event
+    event_type: automation_reloaded
+  - trigger: time_pattern
+    minutes: /5
   actions:
+  - variables:
+      ink_status: "{% set ns = namespace(low=false, valid=0) %}\n{% for entity in
+        ['sensor.epson_et_8550_series_c', 'sensor.epson_et_8550_series_gy', 'sensor.epson_et_8550_series_m',
+        'sensor.epson_et_8550_series_mb', 'sensor.epson_et_8550_series_pb', 'sensor.epson_et_8550_series_y']
+        %}\n  {% set value = states(entity) | float(none) %}\n  {% if value is not
+        none and 0 <= value <= 100 %}\n    {% set ns.valid = ns.valid + 1 %}\n    {%
+        if value < 25 %}{% set ns.low = true %}{% endif %}\n  {% endif %}\n{% endfor
+        %}\n{{ 'low' if ns.low else 'ok' if ns.valid == 6 else 'unknown' }}"
   - choose:
-    - conditions:
-      - condition: trigger
-        id: send_alert
+    - conditions: '{{ ink_status == ''low'' and not is_state(''input_boolean.printer_ink_level_low'',
+        ''on'') }}'
       sequence:
       - action: input_boolean.turn_on
-        metadata: {}
         target:
           entity_id: input_boolean.printer_ink_level_low
-        data: {}
-      - action: script.create_persistent_notification
-        metadata: {}
+      - action: script.notification_send
         data:
-          topic: X Notifications
-          task_helper: input_boolean.printer_ink_level_low
+          persistent: true
+          recipients: x
           message: Ink level low. Please refill.
           title: Alert
-    - conditions:
-      - condition: trigger
-        id: clear_alert
+          done_button: false
+          notification_id: printer_ink
+          clear_entity: input_boolean.printer_ink_level_low
+          clear_state: 'off'
+          notification_data:
+            tag: X Notifications:input_boolean.printer_ink_level_low
+    - conditions: '{{ ink_status == ''ok'' and not is_state(''input_boolean.printer_ink_level_low'',
+        ''off'') }}'
       sequence:
       - action: input_boolean.turn_off
-        metadata: {}
         target:
           entity_id: input_boolean.printer_ink_level_low
-        data: {}
   mode: single
-- id: '1775427245179'
-  alias: Persistent Notification Manager
-  description: Resends notifications if swiped while task is incomplete
-  triggers:
-  - trigger: event
-    event_type: mobile_app_notification_cleared
-  conditions:
-  - condition: template
-    value_template: "{% set tag = trigger.event.data.tag %}\n{% if tag and ':' in
-      tag %}\n  {% set helper = tag.split(':')[1] %}\n  {# Nag if: it's a 'Task' and
-      is OFF, OR it's an 'Alert/Low' and is ON #}\n  {{ is_state(helper, 'on') }}\n{%
-      else %}\n  false\n{% endif %}\n"
-  actions:
-  - action: ticker.notify
-    data:
-      category: '{{ trigger.event.data.tag.split('':'')[0] }}'
-      title: '{{ trigger.event.data.title }}'
-      message: '{{ trigger.event.data.message }}'
-      data:
-        tag: '{{ trigger.event.data.tag }}'
 - id: '1775432947763'
   alias: X Light Off When in Bed
   description: Uses a vibration sensor under bed mattress to control lighting.
@@ -996,39 +984,41 @@
   - if:
     - condition: template
       value_template: "{% set last_success =\n    as_timestamp(\n      states('input_datetime.automatic_alarm_last_success'),\n
-        \     0\n    )\n%}\n{% if now() >= today_at('20:00') %}\n  {% set expected
-        =\n      as_timestamp(today_at('19:50'))\n  %}\n  {{ last_success < expected
+        \     0\n    )\n%}\n{% if now() >= today_at('21:00') %}\n  {% set expected
+        =\n      as_timestamp(today_at('20:50'))\n  %}\n  {{ last_success < expected
         }}\n\n{% elif now() < today_at('15:00') %}\n  {% set expected =\n      as_timestamp(\n
-        \       today_at('19:50') - timedelta(days=1)\n      )\n  %}\n  {{ last_success
+        \       today_at('20:50') - timedelta(days=1)\n      )\n  %}\n  {{ last_success
         < expected }}\n\n{% else %}\n  false\n{% endif %}"
     then:
     - action: automation.trigger
       target:
         entity_id: automation.automatic_morning_alarm_planner
     - wait_template: "{% set last_success =\n    as_timestamp(\n      states('input_datetime.automatic_alarm_last_success'),\n
-        \     0\n    )\n%}\n{% if now() >= today_at('20:00') %}\n  {% set expected
-        =\n      as_timestamp(today_at('19:50'))\n  %}\n{% else %}\n  {% set expected
-        =\n      as_timestamp(\n        today_at('19:50') - timedelta(days=1)\n      )\n
+        \     0\n    )\n%}\n{% if now() >= today_at('21:00') %}\n  {% set expected
+        =\n      as_timestamp(today_at('20:50'))\n  %}\n{% else %}\n  {% set expected
+        =\n      as_timestamp(\n        today_at('20:50') - timedelta(days=1)\n      )\n
         \ %}\n{% endif %}\n{{ last_success >= expected }}"
       timeout: 00:03:00
       continue_on_timeout: true
     - if:
       - condition: template
         value_template: "{% set last_success =\n    as_timestamp(\n      states('input_datetime.automatic_alarm_last_success'),\n
-          \     0\n    )\n%}\n{% if now() >= today_at('20:00') %}\n  {% set expected
-          =\n      as_timestamp(today_at('19:50'))\n  %}\n{% else %}\n  {% set expected
-          =\n      as_timestamp(\n        today_at('19:50') - timedelta(days=1)\n
+          \     0\n    )\n%}\n{% if now() >= today_at('21:00') %}\n  {% set expected
+          =\n      as_timestamp(today_at('20:50'))\n  %}\n{% else %}\n  {% set expected
+          =\n      as_timestamp(\n        today_at('20:50') - timedelta(days=1)\n
           \     )\n  %}\n{% endif %}\n{{ last_success < expected }}"
       then:
-      - action: notify.mobile_app_x_phone
+      - action: script.notification_send
         data:
-          title: ⚠️ Automatic alarm problem
-          message: Home Assistant restarted after the normal alarm check was missed,
-            and automatic recovery did not complete successfully. Please check your
-            calendar and alarms manually.
-          data:
-            ttl: 0
-            priority: high
+          delivery: x
+          payload:
+            title: ⚠️ Automatic alarm problem
+            message: Home Assistant restarted after the normal alarm check was missed,
+              and automatic recovery did not complete successfully. Please check your
+              calendar and alarms manually.
+            data:
+              ttl: 0
+              priority: high
 - id: '1782341081247'
   alias: Jungle Ambient Handler
   description: Controls ambient soundtrack based on bathroom occupancy and time of
@@ -1956,70 +1946,84 @@
       trigger_on_vibe_change: true
 - id: '1786309673750'
   alias: Seb Light Scroll Button
-  description: Controls Seb Light when using the ikea BILRESA scrollbutton
+  description: Scroll adjusts warmth; double click toggles hue selection, single click
+    toggles the light, triple click turns it off.
   use_blueprint:
-    path: custom/ikea-bilresa-scroll-wheel-kelvin-v2.yaml
+    path: custom/ikea-bilresa-scroll-wheel-matter-kelvin.yaml
     input:
-      warmth_min_kelvin: 2000
-      controller_device: 9976b5736cb213ed683d0ca3efeeaa61
-      scroll_target: light.seb_lights
+      scroll_target: light.x_light
       hue_select_helper: input_boolean.seb_lights_hue_select
-      color_cycle_target: light.seb_lights
+      warmth_min_kelvin: 2000
       warmth_max_kelvin: 6535
-      scroll_mode: warmth
+      controller_device: b724c2bd5fadd1f533dff27fce745496
+      click_events:
+      - event.seb_scroll_button_button_3
+      - event.seb_scroll_button_button_6
+      - event.seb_scroll_button_button_9
+      warmth_progress_helper: input_number.seb_light_warmth
+      hue_progress_helper: input_number.seb_light_hue
 - id: '1786309783553'
   alias: Jungle Lights Scroll Button
-  description: Controls Jungle Lights when using the ikea BILRESA scrollbutton
+  description: Scroll adjusts warmth; double click toggles hue selection, single click
+    toggles the light, triple click turns it off.
   use_blueprint:
-    path: custom/ikea-bilresa-scroll-wheel-kelvin-v2.yaml
+    path: custom/ikea-bilresa-scroll-wheel-matter-kelvin.yaml
     input:
-      controller_device: 02033a5d4d94441fdff63a2b223adddc
       scroll_target: light.jungle_main_lights
       warmth_min_kelvin: 2200
       warmth_max_kelvin: 6535
       color_cycle_target: light.jungle_ceiling_light
       hue_select_helper: input_boolean.jungle_light_hue_select
+      controller_device: 12fd1c7b86004fc56bd790b19297ac15
+      click_events:
+      - event.jungle_scroll_button_button_3
+      - event.jungle_scroll_button_button_6
+      - event.jungle_scroll_button_button_9
+      warmth_progress_helper: input_number.jungle_light_warmth
+      hue_progress_helper: input_number.jungle_light_hue
 - id: '1786368587259'
-  alias: Kitchen Light Buttons
-  description: Maps buttons (2 buttons) to control the lights in the kitchen.
+  alias: Kitchen Light Dual Button
+  description: 'BILRESA Matter dual button: button 1 on/brightness step, button 2
+    off; existing double-press and hold lighting modes are preserved.'
   triggers:
-  - domain: mqtt
-    device_id: a8a28466447793dbb6679562b1f57766
-    type: action
-    subtype: 'on'
-    trigger: device
+  - trigger: state
+    entity_id: event.kitchen_dual_button_button_1
     id: on_single
-  - domain: mqtt
-    device_id: a8a28466447793dbb6679562b1f57766
-    type: action
-    subtype: on_double
-    trigger: device
+    variables:
+      expected_event: multi_press_1
+  - trigger: state
+    entity_id: event.kitchen_dual_button_button_1
     id: on_double
-  - domain: mqtt
-    device_id: a8a28466447793dbb6679562b1f57766
-    type: action
-    subtype: brightness_move_up
-    trigger: device
+    variables:
+      expected_event: multi_press_2
+  - trigger: state
+    entity_id: event.kitchen_dual_button_button_1
     id: on_long
-  - domain: mqtt
-    device_id: a8a28466447793dbb6679562b1f57766
-    type: action
-    subtype: 'off'
-    trigger: device
+    variables:
+      expected_event: long_press
+  - trigger: state
+    entity_id: event.kitchen_dual_button_button_2
     id: off_single
-  - domain: mqtt
-    device_id: a8a28466447793dbb6679562b1f57766
-    type: action
-    subtype: off_double
-    trigger: device
+    variables:
+      expected_event: multi_press_1
+  - trigger: state
+    entity_id: event.kitchen_dual_button_button_2
     id: off_double
-  - domain: mqtt
-    device_id: a8a28466447793dbb6679562b1f57766
-    type: action
-    subtype: brightness_move_down
-    trigger: device
+    variables:
+      expected_event: multi_press_2
+  - trigger: state
+    entity_id: event.kitchen_dual_button_button_2
     id: off_long
-  conditions: []
+    variables:
+      expected_event: long_press
+  conditions:
+  - condition: template
+    value_template: '{{ expected_event is not defined or (trigger.from_state is not
+      none and trigger.to_state is not none and trigger.to_state.state not in [''unknown'',''unavailable'','''']
+      and trigger.from_state.state != trigger.to_state.state and as_timestamp(trigger.to_state.state,0)
+      > 0 and (as_timestamp(now())-as_timestamp(trigger.to_state.state,0)) | abs <
+      5 and trigger.to_state.attributes.get(''event_type'','''') == expected_event)
+      }}'
   actions:
   - choose:
     - conditions:
@@ -2117,45 +2121,41 @@
   trace:
     stored_traces: 20
 - id: '1786368791890'
-  alias: Toilet Light Buttons
-  description: Maps buttons (2x2 buttons) to control the lights in the kitchen.
+  alias: Toilet Light Dual Button
+  description: 'BILRESA Matter dual button and existing SOMRIG Zigbee remote: button
+    1 on/brightness step, button 2 off; existing double-press and hold lighting modes
+    are preserved.'
   triggers:
-  - domain: mqtt
-    device_id: 0ca5b6b269c0938889d03d43096bc355
-    type: action
-    subtype: 'on'
-    trigger: device
+  - trigger: state
+    entity_id: event.toilet_dual_button_button_1
     id: on_single
-  - domain: mqtt
-    device_id: 0ca5b6b269c0938889d03d43096bc355
-    type: action
-    subtype: on_double
-    trigger: device
+    variables:
+      expected_event: multi_press_1
+  - trigger: state
+    entity_id: event.toilet_dual_button_button_1
     id: on_double
-  - domain: mqtt
-    device_id: 0ca5b6b269c0938889d03d43096bc355
-    type: action
-    subtype: brightness_move_up
-    trigger: device
+    variables:
+      expected_event: multi_press_2
+  - trigger: state
+    entity_id: event.toilet_dual_button_button_1
     id: on_long
-  - domain: mqtt
-    device_id: 0ca5b6b269c0938889d03d43096bc355
-    type: action
-    subtype: 'off'
-    trigger: device
+    variables:
+      expected_event: long_press
+  - trigger: state
+    entity_id: event.toilet_dual_button_button_2
     id: off_single
-  - domain: mqtt
-    device_id: 0ca5b6b269c0938889d03d43096bc355
-    type: action
-    subtype: off_double
-    trigger: device
+    variables:
+      expected_event: multi_press_1
+  - trigger: state
+    entity_id: event.toilet_dual_button_button_2
     id: off_double
-  - domain: mqtt
-    device_id: 0ca5b6b269c0938889d03d43096bc355
-    type: action
-    subtype: brightness_move_down
-    trigger: device
+    variables:
+      expected_event: multi_press_2
+  - trigger: state
+    entity_id: event.toilet_dual_button_button_2
     id: off_long
+    variables:
+      expected_event: long_press
   - domain: mqtt
     device_id: 13fdc0f255838705242ac1a6182c4876
     type: action
@@ -2192,7 +2192,14 @@
     subtype: 2_long_press
     trigger: device
     id: off_long
-  conditions: []
+  conditions:
+  - condition: template
+    value_template: '{{ expected_event is not defined or (trigger.from_state is not
+      none and trigger.to_state is not none and trigger.to_state.state not in [''unknown'',''unavailable'','''']
+      and trigger.from_state.state != trigger.to_state.state and as_timestamp(trigger.to_state.state,0)
+      > 0 and (as_timestamp(now())-as_timestamp(trigger.to_state.state,0)) | abs <
+      5 and trigger.to_state.attributes.get(''event_type'','''') == expected_event)
+      }}'
   actions:
   - choose:
     - conditions:
@@ -2217,8 +2224,8 @@
         data:
           mode: Timer
           duration:
-            hours: 2
-            minutes: 0
+            hours: 0
+            minutes: 30
             seconds: 0
           auto_mode_helper: input_boolean.toilet_ceiling_light_auto_mode
           timer_active_helper: input_boolean.toilet_ceiling_light_timer_active
@@ -2228,8 +2235,8 @@
         data:
           mode: Timer
           duration:
-            hours: 2
-            minutes: 0
+            hours: 0
+            minutes: 30
             seconds: 0
           auto_mode_helper: input_boolean.toilet_sink_light_auto_mode
           timer_active_helper: input_boolean.toilet_sink_light_timer_active
@@ -2603,14 +2610,21 @@
   mode: single
 - id: '1786652576775'
   alias: X Light Scroll Button
-  description: Controls X Light when using the ikea BILRESA scrollbutton
+  description: Scroll adjusts warmth; double click toggles hue selection, single click
+    toggles the light, triple click turns it off.
   use_blueprint:
-    path: custom/ikea-bilresa-scroll-wheel-kelvin-v2.yaml
+    path: custom/ikea-bilresa-scroll-wheel-matter-kelvin.yaml
     input:
-      controller_device: 8acd1351864ee2c2bdeb153046c1315e
-      scroll_target: light.x_light
-      warmth_min_kelvin: 2200
+      scroll_target: light.seb_lights
       hue_select_helper: input_boolean.x_light_hue_select
+      warmth_min_kelvin: 2200
+      controller_device: e70d9010a2a007974d6ed855c5191c88
+      click_events:
+      - event.x_scroll_button_button_3
+      - event.x_scroll_button_button_6
+      - event.x_scroll_button_button_9
+      warmth_progress_helper: input_number.x_light_warmth
+      hue_progress_helper: input_number.x_light_hue
 - id: '1786956286788'
   alias: Update Brightness Helper on Toggle
   description: Keeps track of the light state machines with manual 3-step on/off toggle
@@ -2661,12 +2675,14 @@
     - condition: template
       value_template: '{{ 2000 <= time_off_ms <= 2500 }}'
     then:
-    - action: ticker.notify
+    - action: script.notification_send
       metadata: {}
       data:
-        category: X Notifications
-        message: 'Check brightness helper sync of living room lights '
-        title: ' '
+        delivery: ticker
+        payload:
+          category: X Notifications
+          message: 'Check brightness helper sync of living room lights '
+          title: ' '
   mode: parallel
   variables:
     light_id: '{{ trigger.entity_id.split(''.'')[1] }}'
@@ -2744,20 +2760,22 @@
   mode: single
 - id: '1787250530331'
   alias: High Accuracy GPS Tracking when going out
-  description: Enables high accuracy GPS for five minutes when leaving either home Wi-Fi network with
-    outstanding shopping items. Ignores switching between home networks and unavailable or unknown SSID
-    reports. SSID values stay in private UI helpers.
+  description: Enables high accuracy GPS for five minutes when leaving either home
+    Wi-Fi network with outstanding shopping items. Ignores switching between home
+    networks and unavailable or unknown SSID reports. SSID values stay in private
+    UI helpers. This automation helps prevent false positives for shopping list reminder
+    automation since the grocery store is so close by.
   triggers:
   - trigger: state
     entity_id: sensor.x_phone_wi_fi_connection
-    to: null
+    to:
   conditions:
   - condition: template
-    value_template: "{% set home_ssids = [states('input_text.home_ssid'), states('input_text.home_ssid_secondary')]\n\
-      \  | reject('in', ['', 'unknown', 'unavailable']) | list %}\n{{ trigger.from_state is not none and\
-      \ trigger.to_state is not none\n   and trigger.from_state.state in home_ssids\n   and trigger.to_state.state\
-      \ not in home_ssids\n   and trigger.to_state.state not in ['', 'unknown', 'unavailable', '<unknown\
-      \ ssid>'] }}"
+    value_template: "{% set home_ssids = [states('input_text.home_ssid'), states('input_text.home_ssid_secondary')]\n
+      \ | reject('in', ['', 'unknown', 'unavailable']) | list %}\n{{ trigger.from_state
+      is not none and trigger.to_state is not none\n   and trigger.from_state.state
+      in home_ssids\n   and trigger.to_state.state not in home_ssids\n   and trigger.to_state.state
+      not in ['', 'unknown', 'unavailable', '<unknown ssid>'] }}"
   - condition: numeric_state
     entity_id: todo.shopping_list
     above: 0
@@ -2837,11 +2855,13 @@
     - discharging
     - not_charging
   actions:
-  - action: ticker.notify
+  - action: script.notification_send
     metadata: {}
     data:
-      category: X Notifications
-      message: Oneplus Pad is not charging
+      delivery: ticker
+      payload:
+        category: X Notifications
+        message: Oneplus Pad is not charging
   mode: single
 - id: '1790629809163'
   alias: Janitor Speakers Self-Heal
@@ -2952,15 +2972,17 @@
       value_template: '{{ final_primary in [''unavailable'', ''unknown''] or final_secondary
         in [''unavailable'', ''unknown''] }}'
     then:
-    - action: ticker.notify
+    - action: script.notification_send
       continue_on_error: true
       data:
-        actions: category_default
-        category: X Notifications
-        title: Janitor speakers need attention
-        message: Automatic repair did not restore availability. Primary={{ final_primary
-          }}, secondary={{ final_secondary }}. Check Pi power/Wi-Fi and Music Assistant.
-          Details are in the self-heal trace.
+        delivery: ticker
+        payload:
+          actions: category_default
+          category: X Notifications
+          title: Janitor speakers need attention
+          message: Automatic repair did not restore availability. Primary={{ final_primary
+            }}, secondary={{ final_secondary }}. Check Pi power/Wi-Fi and Music Assistant.
+            Details are in the self-heal trace.
   - delay: 00:10:00
   mode: single
   max_exceeded: silent
@@ -2968,140 +2990,58 @@
     stored_traces: 10
 - id: '1790884504747'
   alias: Vitamins Reminder System
-  description: Daily vitamin reminders with persistent Done buttons.
+  description: Existing 20:00 and three-day schedules. Calls Send notification with
+    Done and preserves the existing pending helpers.
   triggers:
   - trigger: time
     at: '20:00:00'
     id: schedule
-  - trigger: event
-    event_type: mobile_app_notification_action
-    event_data:
-      action: DAILY_VITAMINS_DONE
-    id: daily_done
-  - trigger: event
-    event_type: mobile_app_notification_action
-    event_data:
-      action: VITAMIN_D_DONE
-    id: vitamin_d_done
-  - trigger: event
-    event_type: mobile_app_notification_cleared
-    id: notification_cleared
   conditions: []
   actions:
-  - choose:
-    - conditions:
-      - condition: trigger
-        id: schedule
-      sequence:
-      - action: input_boolean.turn_on
-        target:
-          entity_id: input_boolean.daily_vitamins_pending
-      - action: ticker.notify
-        data:
-          category: X Notifications
-          title: ''
-          message: Take your daily vitamins.
-          data:
-            tag: vitamins_daily
-            actions:
-            - action: DAILY_VITAMINS_DONE
-              title: Done
-      - if:
-        - condition: template
-          value_template: "{{\n  (\n    (\n      now().date()\n      - strptime('2026-10-01',
-            '%Y-%m-%d').date()\n    ).days % 3\n  ) == 0\n}}\n"
-        then:
-        - action: input_boolean.turn_on
-          target:
-            entity_id: input_boolean.vitamin_d_pending
-        - action: ticker.notify
-          data:
-            category: X Notifications
-            title: ''
-            message: Take your Vitamin D.
-            data:
-              tag: vitamins_vitamin_d
-              actions:
-              - action: VITAMIN_D_DONE
-                title: Done
-    - conditions:
-      - condition: trigger
-        id: daily_done
-      sequence:
-      - action: input_boolean.turn_off
-        target:
-          entity_id: input_boolean.daily_vitamins_pending
-      - action: ticker.notify
-        data:
-          category: X Notifications
-          title: ''
-          message: clear_notification
-          data:
-            tag: vitamins_daily
-    - conditions:
-      - condition: trigger
-        id: vitamin_d_done
-      sequence:
-      - action: input_boolean.turn_off
-        target:
-          entity_id: input_boolean.vitamin_d_pending
-      - action: ticker.notify
-        data:
-          category: X Notifications
-          title: ''
-          message: clear_notification
-          data:
-            tag: vitamins_vitamin_d
-    - conditions:
-      - condition: trigger
-        id: notification_cleared
-      - condition: template
-        value_template: '{{ trigger.event.data.tag | default('''') == ''vitamins_daily''
-          }}
-
-          '
-      - condition: state
-        entity_id: input_boolean.daily_vitamins_pending
-        state: 'on'
-      sequence:
-      - action: ticker.notify
-        data:
-          category: X Notifications
-          title: ''
-          message: Take your daily vitamins.
-          data:
-            tag: vitamins_daily
-            actions:
-            - action: DAILY_VITAMINS_DONE
-              title: Done
-    - conditions:
-      - condition: trigger
-        id: notification_cleared
-      - condition: template
-        value_template: '{{ trigger.event.data.tag | default('''') == ''vitamins_vitamin_d''
-          }}
-
-          '
-      - condition: state
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.daily_vitamins_pending
+  - action: script.notification_send
+    data:
+      persistent: true
+      recipients: x
+      message: Take your daily vitamins.
+      title: ''
+      done_button: true
+      notification_id: daily_vitamins
+      clear_entity: input_boolean.daily_vitamins_pending
+      clear_state: 'off'
+      completion_helper: input_boolean.daily_vitamins_pending
+      notification_data:
+        tag: vitamins_daily
+  - if:
+    - condition: template
+      value_template: "{{\n  (\n    (\n      now().date()\n      - strptime('2026-10-01',
+        '%Y-%m-%d').date()\n    ).days % 3\n  ) == 0\n}}\n"
+    then:
+    - action: input_boolean.turn_on
+      target:
         entity_id: input_boolean.vitamin_d_pending
-        state: 'on'
-      sequence:
-      - action: ticker.notify
-        data:
-          category: X Notifications
-          title: ''
-          message: Take your Vitamin D.
-          data:
-            tag: vitamins_vitamin_d
-            actions:
-            - action: VITAMIN_D_DONE
-              title: Done
+    - action: script.notification_send
+      data:
+        persistent: true
+        recipients: x
+        message: Take your Vitamin D.
+        title: ''
+        done_button: true
+        notification_id: vitamin_d
+        clear_entity: input_boolean.vitamin_d_pending
+        clear_state: 'off'
+        completion_helper: input_boolean.vitamin_d_pending
+        notification_data:
+          tag: vitamins_vitamin_d
   mode: parallel
   max: 10
 - id: '1790975892463'
   alias: 'Shopping List: Notifications & Management'
-  description: Sends silent shopping list notifications upon arrival, clears them
-    on exit, and handles Mark Done actions.
+  description: Sends shopping notifications on arrival and clears them on exit. Stable
+    item UID tags prevent collisions; Mark Done removes the selected item. Existing
+    name-based buttons remain supported when unambiguous.
   triggers:
   - trigger: state
     id: arrived_store
@@ -3157,36 +3097,72 @@
       - repeat:
           for_each: '{{ current_list[''todo.shopping_list''][''items''] }}'
           sequence:
-          - action: notify.mobile_app_x_phone
+          - action: script.notification_send
             data:
-              message: "\U0001F6D2 {{ repeat.item.summary }}"
-              data:
-                channel: Shopping Reminders
-                importance: default
-                group: Shopping List Reminder
-                tag: '{{ repeat.item.summary }}'
-                actions:
-                - action: MARK_DONE_{{ repeat.item.summary }}
-                  title: Mark Done
+              delivery: x
+              payload:
+                message: clear_notification
+                data:
+                  tag: '{{ repeat.item.summary }}'
+          - action: script.notification_send
+            data:
+              delivery: x
+              payload:
+                message: "\U0001F6D2 {{ repeat.item.summary }}"
+                data:
+                  channel: Shopping Reminders
+                  importance: default
+                  group: Shopping List Reminder
+                  tag: '{{ ''shopping_'' ~ repeat.item.uid }}'
+                  actions:
+                  - action: '{{ ''SHOPPING_DONE_'' ~ repeat.item.uid }}'
+                    title: Mark Done
     - conditions:
       - condition: trigger
         id: mark_done
       - condition: template
-        value_template: '{{ trigger.event.data.action.startswith(''MARK_DONE_'') }}'
+        value_template: '{% set action = trigger.event.data.action | default('''')
+          %} {{ action is string and (action.startswith(''SHOPPING_DONE_'') or action.startswith(''MARK_DONE_''))
+          }}'
       sequence:
       - variables:
-          item_name: '{{ trigger.event.data.action | replace(''MARK_DONE_'', '''')
-            }}'
-      - action: todo.remove_item
+          button_action: '{{ trigger.event.data.action }}'
+          modern: '{{ trigger.event.data.action.startswith(''SHOPPING_DONE_'') }}'
+          item_key: '{{ trigger.event.data.action[14:] if trigger.event.data.action.startswith(''SHOPPING_DONE_'')
+            else trigger.event.data.action[10:] }}'
+      - action: todo.get_items
         target:
           entity_id: todo.shopping_list
         data:
-          item: '{{ item_name }}'
-      - action: notify.mobile_app_x_phone
-        data:
-          message: clear_notification
+          status:
+          - needs_action
+          - completed
+        response_variable: action_list
+      - variables:
+          matches: '{{ action_list[''todo.shopping_list''][''items''] | selectattr(''uid''
+            if modern else ''summary'', ''equalto'', item_key) | list }}'
+      - if: '{{ matches | count > 1 }}'
+        then:
+        - stop: Ambiguous legacy item name; use the refreshed UID-based notification
+      - if: '{{ matches | count == 1 }}'
+        then:
+        - action: todo.remove_item
+          target:
+            entity_id: todo.shopping_list
           data:
-            tag: '{{ item_name }}'
+            item: '{{ matches[0].uid }}'
+      - repeat:
+          for_each: '{{ [''shopping_'' ~ item_key] + ([matches[0].summary] if matches
+            else []) if modern else [item_key] + ([''shopping_'' ~ matches[0].uid]
+            if matches else []) }}'
+          sequence:
+          - action: script.notification_send
+            data:
+              delivery: x
+              payload:
+                message: clear_notification
+                data:
+                  tag: '{{ repeat.item }}'
     - conditions:
       - condition: trigger
         id: left_store
@@ -3202,11 +3178,20 @@
       - repeat:
           for_each: '{{ exit_list[''todo.shopping_list''][''items''] }}'
           sequence:
-          - action: notify.mobile_app_x_phone
+          - action: script.notification_send
             data:
-              message: clear_notification
-              data:
-                tag: '{{ repeat.item.summary }}'
+              delivery: x
+              payload:
+                message: clear_notification
+                data:
+                  tag: '{{ ''shopping_'' ~ repeat.item.uid }}'
+          - action: script.notification_send
+            data:
+              delivery: x
+              payload:
+                message: clear_notification
+                data:
+                  tag: '{{ repeat.item.summary }}'
   mode: parallel
   max: 10
 - id: '1791134666788'
@@ -3238,7 +3223,7 @@
     creates the alarms on Android, and reports the result.
   triggers:
   - trigger: time
-    at: '20:00:00'
+    at: '21:00:00'
   conditions: []
   actions:
   - action: homeassistant.update_entity
@@ -3561,24 +3546,26 @@
               | int }},android.intent.extra.alarm.MINUTES:{{ alarm_plan.data.alarm_3_time.split(':')[1]
               | int }},android.intent.extra.alarm.MESSAGE:{{ ('HA - ' ~ alarm_plan.data.alarm_3_label)
               | urlencode }}:String.urlencoded,android.intent.extra.alarm.SKIP_UI:true
-  - action: notify.mobile_app_x_phone
+  - action: script.notification_send
     data:
-      title: "{% if alarm_plan.data.manual_review_needed | bool %}\n  ⚠️ Automatic
-        Alarm — please check\n{% elif alarm_plan.data.alarm_1_needed | bool\n    or
-        alarm_plan.data.alarm_2_needed | bool\n    or alarm_plan.data.alarm_3_needed
-        | bool %}\n  Alarms set\n{% else %}\n  No alarms needed\n{% endif %}"
-      message: "{% if alarm_plan.data.alarm_1_needed | bool %}\nAlarm {{ alarm_plan.data.alarm_1_time[:5]
-        }} — {{ alarm_plan.data.alarm_1_label }} at {{ alarm_plan.data.alarm_1_event_time
-        }}\n{% endif %}\n{% if alarm_plan.data.alarm_2_needed | bool %}\nAlarm {{
-        alarm_plan.data.alarm_2_time[:5] }} — {{ alarm_plan.data.alarm_2_label }}
-        at {{ alarm_plan.data.alarm_2_event_time }}\n{% endif %}\n{% if alarm_plan.data.alarm_3_needed
-        | bool %}\nAlarm {{ alarm_plan.data.alarm_3_time[:5] }} — {{ alarm_plan.data.alarm_3_label
-        }} at {{ alarm_plan.data.alarm_3_event_time }}\n{% endif %}\n{% if not (alarm_plan.data.alarm_1_needed
-        | bool)\n      and not (alarm_plan.data.alarm_2_needed | bool)\n      and
-        not (alarm_plan.data.alarm_3_needed | bool) %}\nNothing in the calendar requires
-        a wake-up alarm.\n{% endif %}\n{% if alarm_plan.data.manual_review_needed
-        | bool %}\n\nCheck manually: {{ alarm_plan.data.manual_review_reason }}\n{%
-        endif %}"
+      delivery: x
+      payload:
+        title: "{% if alarm_plan.data.manual_review_needed | bool %}\n  ⚠️ Automatic
+          Alarm — please check\n{% elif alarm_plan.data.alarm_1_needed | bool\n    or
+          alarm_plan.data.alarm_2_needed | bool\n    or alarm_plan.data.alarm_3_needed
+          | bool %}\n  Alarms set\n{% else %}\n  No alarms needed\n{% endif %}"
+        message: "{% if alarm_plan.data.alarm_1_needed | bool %}\nAlarm {{ alarm_plan.data.alarm_1_time[:5]
+          }} — {{ alarm_plan.data.alarm_1_label }} at {{ alarm_plan.data.alarm_1_event_time
+          }}\n{% endif %}\n{% if alarm_plan.data.alarm_2_needed | bool %}\nAlarm {{
+          alarm_plan.data.alarm_2_time[:5] }} — {{ alarm_plan.data.alarm_2_label }}
+          at {{ alarm_plan.data.alarm_2_event_time }}\n{% endif %}\n{% if alarm_plan.data.alarm_3_needed
+          | bool %}\nAlarm {{ alarm_plan.data.alarm_3_time[:5] }} — {{ alarm_plan.data.alarm_3_label
+          }} at {{ alarm_plan.data.alarm_3_event_time }}\n{% endif %}\n{% if not (alarm_plan.data.alarm_1_needed
+          | bool)\n      and not (alarm_plan.data.alarm_2_needed | bool)\n      and
+          not (alarm_plan.data.alarm_3_needed | bool) %}\nNothing in the calendar
+          requires a wake-up alarm.\n{% endif %}\n{% if alarm_plan.data.manual_review_needed
+          | bool %}\n\nCheck manually: {{ alarm_plan.data.manual_review_reason }}\n{%
+          endif %}"
   - action: input_datetime.set_datetime
     target:
       entity_id: input_datetime.automatic_alarm_last_success
@@ -3590,18 +3577,20 @@
   description: Warns if the nightly alarm planning workflow did not finish successfully.
   triggers:
   - trigger: time
-    at: '20:15:00'
+    at: '21:15:00'
   conditions:
   - condition: template
     value_template: "{{ as_timestamp(states('input_datetime.automatic_alarm_last_success'),
       0)\n   < as_timestamp(today_at('19:50')) }}"
   actions:
-  - action: notify.mobile_app_x_phone
+  - action: script.notification_send
     data:
-      title: ⚠️ Automatic alarm problem
-      message: Automatic alarm planning did not complete successfully tonight. Please
-        check your calendar and morning alarms manually.
-      data:
-        ttl: 0
-        priority: high
+      delivery: x
+      payload:
+        title: ⚠️ Automatic alarm problem
+        message: Automatic alarm planning did not complete successfully tonight. Please
+          check your calendar and morning alarms manually.
+        data:
+          ttl: 0
+          priority: high
   mode: single
