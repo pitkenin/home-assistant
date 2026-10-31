@@ -1,10 +1,10 @@
-# How the pieces fit together
+# System overview
 
-[Back to the home](../README.md)
+[Back to the project](../README.md)
 
-Home Assistant Green holds the state and coordinates the rules. The useful
-distinction is between what the house knows, what it decides, and what actually
-changes a light or starts a sound.
+Home Assistant Green is the main controller. The configuration includes HA
+automations, reusable scripts, feature packages and custom integrations. This
+page covers the main parts and how they connect.
 
 ```mermaid
 flowchart TD
@@ -18,49 +18,52 @@ flowchart TD
     Rules --> Phone[Phone notifications]
 ```
 
-## Rules before individual devices
+## Lighting and modes
 
-Time of day and the chosen atmosphere are shared inputs. A room can then add
-its own occupancy and manual-control rules. This keeps the meaning of Night or
-Maintenance in one place instead of giving every automation a different idea of it.
+Time of Day and Vibe Mode are shared settings used by several features. Room
+rules add motion, occupancy and manual control. This keeps the mode definitions
+in one place instead of repeating them in each automation.
 
-Those priorities still need exceptions. Automatic music stops for the night,
-but a person pressing Play can start it deliberately. A manual light choice
-should not immediately lose to a motion event. These are explicit decisions in
-the rules, rather than accidents of which automation happened to run last.
+A wall button can put a light under manual control for a while. Motion events
+then respect that choice until the override ends. Other features have similar
+exceptions: automatic music stops at night, but pressing Play can still start it.
 
-## Shared actions
+## Reminders
 
-The notification manager is shared by reminders, plant checks and repeating
-tasks. Individual features decide when something is due; the manager deals with
-sending it, keeping it pending, and handling Done or Snooze.
+Reminders, plant checks and repeating tasks use the same notification manager.
+Each feature decides when something is due. The manager sends the notification,
+keeps track of the pending occurrence, and handles Done and Snooze.
 
-The room sound system has a similar split. The library describes sounds and
-their settings; the controller handles playback, fades and interruptions. That
-makes it possible to adjust a sound without rebuilding the controller around it.
+Shared reminders use one completion record for both phones. The task records
+are stored in HA's native to-do storage. More detail is in the
+[reminder notes](selected-builds.md#shared-reminders).
 
-The configuration is spread across ordinary HA automations, reusable scripts,
-feature packages and a small set of custom integrations. Reading only
-`automations.yaml` misses much of the implementation.
+## Audio
 
-## Local and cloud work
+Jungle audio runs on a separate Raspberry Pi with two Squeezelite players. Both
+serve the same room; the second player allows one sound to fade into another.
+The sound library holds the clips and their settings, while the controller
+handles playback, fades and interruptions.
 
-Motion, buttons and room rules are coordinated in HA. The Finnish wake-word
-model runs on the living-room voice device. That does not make the whole voice
-assistant offline: transcription, conversation or speech can involve external
-services, depending on the selected pipeline.
+Music Assistant manages music and the selected outputs around the home. The
+living-room voice device has custom firmware for independent music and assistant
+volume. Its hardware output is shared, but each audio source has its own volume
+adjustment before reaching it.
 
-Jungle audio runs on a separate Raspberry Pi through two Squeezelite players.
-They are overlapping playback paths for the same room, rather than two different
-rooms. Music Assistant also manages shared music and other selected outputs.
+## Voice
 
-## Recovery has limits
+The Finnish wake-word model runs on the living-room voice device. The rest of
+the voice pipeline can use external services for transcription, conversation
+and speech, depending on the selected pipeline.
 
-Reconnect handling, saved task records and startup reconciliation cover several
-ordinary interruptions. They cannot make a full disk harmless or replace a
-usable backup. Private config history helps recover an edit; HA backups also
-preserve registrations and data that are deliberately absent from the public repo.
+Habibi is a separate Android assistant project connected to HA.
 
-I try to keep a local control available where it matters, preserve manual
-choices during recovery, and test the recovery path instead of assuming that
-valid YAML means the feature works.
+## Restarts and backups
+
+Saved task records, reconnect handling and startup checks help restore the setup
+after an interruption. Manual choices also need to survive recovery where
+appropriate, so a reconnect doesn't unexpectedly change what someone selected.
+
+Private configuration history is useful for recovering edits. HA backups also
+include the registrations and stored data needed to restore the home. The public
+repository contains only part of the configuration.

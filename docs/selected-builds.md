@@ -1,71 +1,66 @@
-# Three builds in more detail
+# Technical notes
 
-[Back to the home](../README.md)
+[Back to the project](../README.md)
 
-## A reminder that is still the same reminder tomorrow
+These are three parts of the setup that needed more work than a regular HA
+automation. Each section explains the problem and the current implementation.
 
-The simple version sends a notification. The harder version knows whether a
-button belongs to the reminder that is pending now or to an older one that has
-already been completed.
+## Shared reminders
 
-I separated the task from each occurrence of it. A task can repeat, while the
-notification and its completion button belong to a particular occurrence.
-Before accepting a phone action, the manager checks the sender and that current
-occurrence. An old Done button should not complete the next reminder.
+A repeating task needs to distinguish today's reminder from the next one.
+Otherwise, pressing Done on an old phone notification could complete a newer
+reminder by mistake.
 
-For shared tasks, both phones refer to the same completion record. Completing
-one copy clears the other. Plant checks add their own scheduling: Done means
-checked, and the next check is calculated from that date. It does not mean
-that every plant must have been watered.
+The task and its individual occurrences have separate records. Each notification
+action belongs to a particular occurrence. Before accepting it, the notification
+manager checks the sender and the current occurrence. A button from an older
+notification can't complete the next reminder.
 
-The records use HA's native to-do storage rather than a separate database for
-each feature. That is convenient for persistence and editing, but it still needs
-careful handling around retries, old actions and restarts. Those cases have been
-checked separately from the real-phone tests.
+Both phones refer to the same completion record for a shared task. Completing
+it on one phone clears it from the other. Plant checks use this too, with the
+next check calculated from the completion date. Here Done means the plant has
+been checked; it doesn't require watering every time.
 
-## Giving music and speech different volume controls
+The records use HA's native to-do storage. Checks have covered stale actions,
+retries, edits and reloads, as well as completion from a real phone.
 
-The [music control screenshot](interface.md#music) shows the two levels in use.
+## Separate music and assistant volume
 
-The original living-room setup exposed one physical audio level. Fading music
-to zero could also make assistant speech and wake sounds inaudible. Two sliders
-would not solve that if both still changed the same output.
+The living-room voice device originally had one output level for music, spoken
+replies and wake sounds. Fading music to zero could make the assistant inaudible
+too.
 
-The custom firmware now adjusts music and announcement audio separately before
-they reach the shared output. In implementation terms, each source has a
-software gain applied to its PCM samples. The hardware output stays at a fixed
-ceiling, and short ramps smooth changes in gain.
+The custom firmware applies a separate software gain to each source's audio
+samples (PCM). The hardware output stays at a fixed ceiling. Short ramps smooth
+volume changes, and the existing volume curve is preserved so familiar settings
+don't suddenly become much louder.
 
-The change retains the existing mixing and playback timing. It also follows
-the old volume curve so familiar music levels do not suddenly become much louder.
-The physical speaker knob still affects both paths; the separation is within
-the voice device, not two independent amplifiers.
+This keeps the existing audio mixing and playback timing. The physical speaker
+knob still affects both sources; the separate controls are within the voice
+device. The [music menu screenshot](interface.md#music) shows music at zero and
+the assistant at 26%.
 
-Checks covered the actual gain code, independent mute and volume, and positive
-and negative full-scale samples. On the installed device, changing Assistant
-left Music alone, and music at zero left the assistant level intact. Audible
-checks of every interruption path are a separate task, not something the numeric
-checks prove.
+The gain code has tests for independent mute and volume, including positive and
+negative full-scale samples. Checks on the installed device confirmed that
+changing Assistant left Music alone, and muting Music left the assistant level
+intact. Some interruption paths still need listening tests.
 
-## Making a wake word fit the person using it
+## Finnish wake word
 
-The first Finnish wake-word models looked promising in offline tests but were
-unreliable in the room. Changing sensitivity did not fix that. The useful next
-step was a recording of my own pronunciation, including speaking from different
-places in the room.
+Early custom wake-word models performed better in offline tests than in the
+room. Adjusting sensitivity wasn't enough. I recorded my own pronunciation from
+different places in the room and used it to refine the model.
 
-The personal recording was divided into training, validation and test portions
-before training. The new model was also checked with background audio for false
-activations. On six reserved phrases from that recording session, the previous
-model detected two and the new one detected all six at their respective tested
-settings.
+The recording was split into training, validation and test portions before
+training. The model was also checked against background audio for false
+activations. On six reserved phrases from that recording session:
 
-That is a small comparison from one speaker and one recording session. It is
-evidence for an improvement, not a general Finnish recognition score. The more
-useful follow-up was trying it on the installed device: I confirmed that it was
-working well in the room. The fallback wake word and the previous firmware
-remain available for recovery.
+| Model | Phrases detected at its tested settings |
+| --- | --- |
+| Previous version | 2 of 6 |
+| Personal revision | 6 of 6 |
 
-Across these builds, the recurring lesson has been to separate a feature into
-parts that can be checked independently, then still test the part a person
-actually experiences.
+That's a small test with one speaker from one recording session. It doesn't
+give a general score for Finnish recognition. I've also tried the installed
+version and confirmed that it works well for me in the room. The stock wake
+word and previous firmware remain available as fallbacks.
