@@ -1,90 +1,120 @@
-# ✨ home-assistant
+# home-assistant
 
 Documentation of the smart home project I've been building with Home Assistant.
 
-I figured that if I'm automating the house, the documentation of it ought to be automated as well. And indeed this page is.
+I started this in early 2026. Most of the everyday controls are together on
+the Hub:
 
-It's generated from automations.yaml — the actual, complete automation code running my home, sitting right there in this repository — plus a set of accurately tuned instructions for the model. 
-The overview below rewrites itself whenever I make changes to my smart home. And the best part is: I don't even need to think about it anymore. It just works. Even the images get inserted, deterministically, in their correct spots!
-There's a description of how that works at the end of the file.
+![The Hub dashboard with music, weather, lighting and household shortcuts](images/hub-dashboard.webp)
 
-But first, here's the interesting part:
+## Welcome to the Jungle
 
-## 🏡 The Smart Home
+Walking into the bathroom gives you an adventurous transportation into the
+Jungle: first thing you notice is the vine-covered interior, birds on the shelves
+and a monkey holding a lightbulb, which lights up in a warm color as you walk in.
+After a second, you notice the sounds of the jungle begin surrounding you from
+all directions, emanating from the speakers located around the bathroom ceiling,
+connected to a Raspberry Pi and controlled by Home Assistant's Music Assistant.
+As you visit the Jungle more often, you will notice the soundtrack changing
+throughout the day, with crickets at night and birds chirping during the day.
+On some rare occasions you can even hear a fun little melody playing in the
+Jungle!
 
-<!-- START_AI_SUMMARY -->
+The Jungle has grown a bit since then. Stay for a shower and you might hear rain
+and thunder, with the monkey's light providing the lightning. During a sauna
+session, the room can join the music playing in the living room, or keep its own
+jungle ambience. And when you step up to the sink to wash your hands, the mirror
+cabinet light comes on without you reaching for a switch.
 
-Home is the space I've been building since early 2026, one room and one small fix at a time. It's a bathroom that turns into a jungle, lights that know when to get out of your way, and a phone that remembers the things I'd otherwise forget. Underneath it all sits a handful of automations that keep watch over the rest, so the house keeps behaving even when I'm not paying attention.
+![The Jungle bathroom](images/welcome-to-the-jungle.jpg)
 
-### 🌴 Welcome to the Jungle
+## Brain's Virtual Memory Extension
 
-Walking into the bathroom drops you straight into the Jungle: vines climb the walls, birds perch on the shelves, and a monkey hangs from the ceiling holding a lightbulb that glows warm the moment you step in. A beat later the room fills with sound, spilling out of the ceiling speakers and shifting with the time of day, settling into crickets late at night and bringing the birds back through the morning and afternoon. Every so often, rarely enough that it still catches you off guard, a hidden little melody plays under the ambient soundtrack instead. Step up to the sink to wash your hands and the mirror cabinet light above it switches on by itself, sensing you're right there without you ever reaching for a switch.
+I couldn't stop at only automating the home and its devices; I also had to
+automate my daily life, even outside of home. Since I always carry a phone with
+me, I decided to utilize it to the fullest and set up automated notifications so
+I would never forget anything! Whenever my phone enters a grocery store's
+vicinity, I get a notification listing all items on my "I'll get it next time I
+go grocery shopping"-list, if there are any.
 
-![🌴 Welcome to the Jungle](images/welcome-to-the-jungle.jpg)
+Adding things to that list now has its own menu, with pictures of everyday
+products. When I notice something running out, I can tap it onto the list and
+leave the remembering to my phone. The same idea works at home: the washing
+machine's smart plug notices when a load has finished, and the printer's low-ink
+notification keeps coming back until I actually refill it.
 
-### 🧠 Brain's Virtual Memory Extension
+![The shopping menu, with illustrated categories for everyday products](images/shopping-categories.webp)
 
-I couldn't stop at automating the home itself; I wanted my daily life outside it handled too, so my phone became the messenger. Walk near a grocery store and it lists everything sitting on the shopping list, so I never stand in an aisle trying to remember what ran out. Finish a load of laundry — tracked by a smart plug watching the washing machine's power draw, since there's no sensor inside the machine itself — and it tells whoever started the wash that it's ready. When the printer's ink runs low it sends a notification that doesn't just disappear when swiped; it keeps coming back until I actually refill it. The whole idea is externalising my own memory, so I can move through the day a little more care-free.
+The plants have joined in too. Each has its own place in the plant menu and a
+reminder for when it's time to check it again. If I'm busy, I can snooze the
+reminder; if one of us has already taken care of a shared task, completing it
+clears it from both phones. Repeating household tasks work this way as well.
+The whole idea is to externalize my memory so I can live a little more care-free,
+without having to keep a second list of things I still need to remember to do.
 
-![🧠 Brain's Virtual Memory Extension](images/brain-s-virtual-memory-extension.jpg)
+![Part of the plant menu, showing when each plant is due for its next check](images/plant-care.webp)
 
-### 💡 Automatic lights, until you say otherwise
+## Automatic lights, until you say otherwise
 
-Motion handles most of the lighting around the house — the hallway, my bedroom, the Jungle, and the toilet all light themselves as you walk in. But automatic lighting stops feeling clever the moment it does something you didn't ask for, so every one of those rooms sits right next to a wall control too. A press takes that room off automatic and does exactly what you asked instead, whether that means holding the lights off or locking them on at full brightness. The override then expires on its own after a while, or resets the next morning, and the room slides back onto automatic without me ever having to remember to switch it back myself. The automation never fights you; it just steps aside when you want it to, and steps back in later, on its own.
+Walking through the hallway or into the bathroom is enough to turn the lights
+on, and at night they come on softer and warmer. That's nice until you decide
+you want a light off and the next motion event turns it straight back on again.
+I still want an ordinary wall button to do what I asked it to do.
 
-### 🌓 Time of Day and Vibe Modes
+So the button press also tells the room to leave automatic control alone for a
+while. I can keep the light off, leave it on, or choose a different brightness.
+The button can give me a pause until later or the next morning, after which the
+room returns to automatic without me having to remember to switch it back.
 
-Two modes sit underneath almost everything else in the house, read by lighting, sound, and notifications alike. Time of Day moves through Morning, Day, Evening, and Night on its own schedule, and at night the house leans toward fewer, warmer-toned lights rather than the plain white of daytime. Vibe Mode sits above it, set by hand for a particular atmosphere, and it usually wins the argument when the two disagree. Switch on Maintenance and the lights stay on and the sound stays off until I switch it back myself, useful for cleaning or fixing things without the house trying to help. Switch on Movie and the areas near the living room stay darker, so nothing spills onto the screen while someone's watching.
+There is now a Lighting Studio for adjusting these rules. I can open a light's
+card, change how it should behave at different times, and set what its physical
+buttons do. The current manual overrides are visible there too, so I can see
+why a light is doing what it's doing.
 
-### 🔧 When something breaks
+![Lighting Studio, showing room rules and a temporary manual override](images/lighting-studio.webp)
 
-The bigger this system gets, the less I want to be the one who notices when something's gone wrong. If the Jungle speakers drop off the network, Home Assistant catches it, tells me, and tries rebooting them itself. As a second line of defense there's a watchdog running directly on the Pi, independent of Home Assistant entirely, that reboots and logs on its own in case the whole thing becomes unreachable. The goal isn't zero failures — with this many moving parts something will eventually hiccup — it's having the house notice and fix itself before I do. Set and forget, as much as a jungle bathroom can be.
+## Time of Day and Vibe Modes
 
+The same room needs different settings depending on what we're doing. A trip to
+the toilet at night doesn't need daytime lighting, and the lights near the
+living room should stay darker when someone's watching a movie.
 
-<!-- END_AI_SUMMARY -->
+Time of Day moves through Morning, Day, Evening and Night. Vibe Mode lets me
+choose an atmosphere across the home, and usually takes priority over the time
+of day. Movie changes the nearby lighting, while Sauna can bring the Jungle
+into the shared music. These are shared choices, so the rooms can follow the
+same mode without me going around changing them individually.
 
-## ⚙️ How the automatic documentation works
+## Music around the home
 
-```mermaid
-flowchart LR
-    A["automations.yaml"] --> B["Git Exporter"]
-    B --> C["private repo"]
-    C --> D["GitHub Actions"]
-    D --> E["Claude"]
-    E --> F["this file"]
-```
+When there's music playing in the living room, I can open the music menu and
+add the balcony to the same session. During a sauna session, Sauna Sync brings
+the Jungle in too. The genre shortcuts and search are there as well, so I can
+choose what to listen to from the same place. Ordinary automatic playback stops
+for the night, but pressing Play still means I want to listen now.
 
-Once a day, an automation in Home Assistant triggers an add-on that pushes the config to
-a private repository. A GitHub Action there passes the automations to Claude, which
-groups them into themes and writes the section above. The `description` field on each 
-automation is written by hand when I build it, and the model uses it to help it 
-determine what the automation does. Photos are placed by the script rather than the model, 
-matched to sections by filename, so the same input always produces the same layout. 
-The model only writes the text, and it never handles the images.
+One less obvious problem was what happened when I turned the music all the way
+down. The living-room voice device shared that volume with the assistant, so
+the next spoken reply could disappear too. It now has separate Music and
+Assistant sliders: I can have silence from the music and still hear the answer.
+That took a change to the device firmware, which is described in
+[how I built it](docs/engineering.md#separate-music-and-assistant-volume).
 
-The system hashes the automation set before doing anything, so an unchanged config costs no
-API calls and produces no commit. It feeds the previous version back as context, so
-sections stay where they are instead of being reorganised on every run. And two
-deterministic scanners check both the source config and the generated text against
-patterns and a private string list before anything is published — if either trips,
-the run fails and the README is left alone.
+![Music controls with independent Music and Assistant levels, room choices and genre shortcuts](images/music-controls.webp)
 
+## Hei Jarvis
 
+In the living room, I can get the voice device's attention with **Hei Jarvis**.
+Getting it to recognise how I actually say that took some experimenting. The
+English wake word didn't respond well to my Finnish pronunciation, and the
+first custom models still needed too much repeating when I tried them in the room.
 
-## 🛠️ Hardware
+So I recorded my own pronunciation from different places in the room and used
+those recordings to refine the model. The current version has been working well
+for me. I'm also working on Habibi, an Android assistant connected to the home.
 
-Home Assistant Green serves as the hub, with a Zigbee2MQTT bridge for the Zigbee side.
+## How I built it
 
-Around 35 devices in total, across the living room, hallway, toilet, two bedrooms, and
-the bathroom (which is called Jungle).
-
-Lighting is mostly WiZ RGB bulbs, with Shelly relays behind fixtures I couldn't
-replace. Input comes mostly from IKEA SOMRIG buttons on the walls, Aqara P1 motion sensors,
-an Aqara vibration sensor on a door, and a smart plug for appliance
-power. A battery IR blaster covers the devices with no network control.
-
-Audio runs on a separate Raspberry Pi Zero 2 W in the bathroom, driving two
-Squeezelite instances through a DeLOCK 7.1 USB sound card, Y-split to a pair of
-Logitech Z150s and a pair of Trust Polo 2.0s. Music Assistant controls sounds and music.
-Elsewhere there's an NVIDIA SHIELD, a Google Nest Mini, a Roborock S5 Max, and an Epson ET-8550.
-
+There's more about the custom Jungle audio, lighting controls, shared reminders
+and voice work in the [engineering notes](docs/engineering.md).
+The [published automations](automations.yaml) are here too.
