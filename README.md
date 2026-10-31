@@ -2,10 +2,10 @@
 
 Documentation of the smart home project I've been building with Home Assistant.
 
-I started this in early 2026. There's a more technical look at the setup at the
-end of this page, with notes on how some of the more involved parts work.
+I started this in early 2026. Most of the everyday controls are together on
+the Hub:
 
-But first, here's the interesting part:
+![The Hub dashboard with music, weather, lighting and household shortcuts](images/hub-dashboard.webp)
 
 ## Welcome to the Jungle
 
@@ -43,6 +43,8 @@ leave the remembering to my phone. The same idea works at home: the washing
 machine's smart plug notices when a load has finished, and the printer's low-ink
 notification keeps coming back until I actually refill it.
 
+![The shopping menu, with illustrated categories for everyday products](images/shopping-categories.webp)
+
 The plants have joined in too. Each has its own place in the plant menu and a
 reminder for when it's time to check it again. If I'm busy, I can snooze the
 reminder; if one of us has already taken care of a shared task, completing it
@@ -50,7 +52,7 @@ clears it from both phones. Repeating household tasks work this way as well.
 The whole idea is to externalize my memory so I can live a little more care-free,
 without having to keep a second list of things I still need to remember to do.
 
-![An example of the phone notification setup](images/brain-s-virtual-memory-extension.jpg)
+![Part of the plant menu, showing when each plant is due for its next check](images/plant-care.webp)
 
 ## Automatic lights, until you say otherwise
 
@@ -69,18 +71,19 @@ card, change how it should behave at different times, and set what its physical
 buttons do. The current manual overrides are visible there too, so I can see
 why a light is doing what it's doing.
 
+![Lighting Studio, showing room rules and a temporary manual override](images/lighting-studio.webp)
+
 ## Time of Day and Vibe Modes
 
 The same room needs different settings depending on what we're doing. A trip to
-the toilet at night doesn't need daytime lighting, and cleaning the Jungle is
-easier when the lights stay on and the soundtrack stays quiet.
+the toilet at night doesn't need daytime lighting, and the lights near the
+living room should stay darker when someone's watching a movie.
 
 Time of Day moves through Morning, Day, Evening and Night. Vibe Mode lets me
 choose an atmosphere across the home, and usually takes priority over the time
-of day. Maintenance keeps the lights on and sounds off until I switch it back;
-Movie keeps the areas near the living room darker while someone's watching.
-These are shared choices, so the rooms can follow the same mode without me
-going around changing them individually.
+of day. Movie changes the nearby lighting, while Sauna can bring the Jungle
+into the shared music. These are shared choices, so the rooms can follow the
+same mode without me going around changing them individually.
 
 ## Music around the home
 
@@ -94,14 +97,10 @@ One less obvious problem was what happened when I turned the music all the way
 down. The living-room voice device shared that volume with the assistant, so
 the next spoken reply could disappear too. It now has separate Music and
 Assistant sliders: I can have silence from the music and still hear the answer.
-That took a change to the device firmware, which is described in the
-[audio notes](docs/selected-builds.md#separate-music-and-assistant-volume).
+That took a change to the device firmware, which is described in
+[how I built it](docs/engineering.md#separate-music-and-assistant-volume).
 
-The Hub brings the everyday controls together. There are more screenshots of
-the shopping, plant, lighting and music menus in the
-[interface gallery](docs/interface.md).
-
-![The Hub dashboard with music, weather, lighting and household shortcuts](images/hub-dashboard.webp)
+![Music controls with independent Music and Assistant levels, room choices and genre shortcuts](images/music-controls.webp)
 
 ## Hei Jarvis
 
@@ -112,35 +111,10 @@ first custom models still needed too much repeating when I tried them in the roo
 
 So I recorded my own pronunciation from different places in the room and used
 those recordings to refine the model. The current version has been working well
-for me, and the stock wake word is still there as a fallback. The
-[wake-word notes](docs/selected-builds.md#finnish-wake-word) include the small
-offline comparison and the room test. I'm also working on Habibi, an Android
-assistant connected to the home.
+for me. I'm also working on Habibi, an Android assistant connected to the home.
 
-## When something breaks
+## How I built it
 
-The bigger this setup gets, the more I want to rely on automatic diagnostics
-and repairs. If the Jungle audio players drop off the network, Home Assistant
-notices, tells me and can try to recover them. There's also a watchdog on the Pi
-itself that can reboot and log independently if HA can't reach it.
-
-Old rollback copies recently filled the hub's storage and blocked backups, so
-those archives have been moved off the hub and there are now earlier warnings for disk space,
-failed backups and backups getting too old. The aim is to get closer to a
-set-and-forget home while keeping track of the parts that still need attention.
-
-## A closer look
-
-Home Assistant Green is the main controller, with Zigbee2MQTT and a mix of Wi-Fi,
-Zigbee and Matter devices. The Jungle audio Pi and living-room Voice Preview
-Edition handle the room audio and voice functions.
-
-The [system overview](docs/how-it-works.md) shows how the main parts connect.
-The [technical notes](docs/selected-builds.md) cover shared reminders, separate
-audio levels and the Finnish wake word, and the [testing notes](docs/testing.md)
-explain what's been checked and what still needs work.
-
-The published [automation YAML](automations.yaml) is a snapshot for reference.
-Scripts, packages, custom integrations and private settings also make up the
-setup, so that file alone won't recreate it. These pages are updated separately
-from the configuration exports.
+There's more about the custom Jungle audio, lighting controls, shared reminders
+and voice work in the [engineering notes](docs/engineering.md).
+The [published automations](automations.yaml) are here too.
