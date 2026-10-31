@@ -12,6 +12,11 @@ For a closer look, start with [how the pieces fit together](docs/how-it-works.md
 [three builds in more detail](docs/selected-builds.md), or
 [what I've tested and what still needs work](docs/testing.md).
 
+![The Hub dashboard with music, weather, lighting and household shortcuts](images/hub-dashboard.webp)
+
+The Hub is the everyday control page. The [interface gallery](docs/interface.md)
+shows the shopping catalogue, plant checks, lighting editor and music controls.
+
 ## Welcome to the Jungle
 
 The bathroom is called Jungle. There are vines, birds on the shelves, and a monkey

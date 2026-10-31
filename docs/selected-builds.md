@@ -25,6 +25,8 @@ checked separately from the real-phone tests.
 
 ## Giving music and speech different volume controls
 
+The [music control screenshot](interface.md#music) shows the two levels in use.
+
 The original living-room setup exposed one physical audio level. Fading music
 to zero could also make assistant speech and wake sounds inaudible. Two sliders
 would not solve that if both still changed the same output.
